@@ -53,9 +53,6 @@ enum ApiErrorCode: string
     // External services
     case SERVICE_UNAVAILABLE = 'service_unavailable';
     case EXTERNAL_SERVICE_ERROR = 'external_service_error';
-    case CLOCKIFY_API_ERROR = 'clockify_api_error';
-    case CLOCKIFY_AUTHENTICATION_FAILED = 'clockify_authentication_failed';
-    case CLOCKIFY_RATE_LIMITED = 'clockify_rate_limited';
 
     // System
     case INTERNAL_SERVER_ERROR = 'internal_server_error';
@@ -104,9 +101,6 @@ enum ApiErrorCode: string
             self::DATABASE_QUERY_FAILED => 'The database query failed.',
             self::SERVICE_UNAVAILABLE => 'The service is temporarily unavailable.',
             self::EXTERNAL_SERVICE_ERROR => 'An external service returned an error.',
-            self::CLOCKIFY_API_ERROR => 'The Clockify API returned an error.',
-            self::CLOCKIFY_AUTHENTICATION_FAILED => 'Clockify authentication failed.',
-            self::CLOCKIFY_RATE_LIMITED => 'The Clockify API rate limit was reached.',
             self::INTERNAL_SERVER_ERROR => 'An unexpected error occurred.',
             self::NOT_IMPLEMENTED => 'This feature is not implemented.',
             self::MAINTENANCE_MODE => 'The application is in maintenance mode.',
@@ -152,8 +146,7 @@ enum ApiErrorCode: string
             self::EXPORT_FAILED => Response::HTTP_UNPROCESSABLE_ENTITY,
 
             self::RATE_LIMIT_EXCEEDED,
-            self::QUOTA_EXCEEDED,
-            self::CLOCKIFY_RATE_LIMITED => Response::HTTP_TOO_MANY_REQUESTS,
+            self::QUOTA_EXCEEDED => Response::HTTP_TOO_MANY_REQUESTS,
 
             self::METHOD_NOT_ALLOWED => Response::HTTP_METHOD_NOT_ALLOWED,
 
@@ -161,14 +154,12 @@ enum ApiErrorCode: string
 
             self::SERVICE_UNAVAILABLE => Response::HTTP_SERVICE_UNAVAILABLE,
 
-            self::BAD_REQUEST,
-            self::CLOCKIFY_AUTHENTICATION_FAILED => Response::HTTP_BAD_REQUEST,
+            self::BAD_REQUEST => Response::HTTP_BAD_REQUEST,
 
             self::DATABASE_ERROR,
             self::DATABASE_CONNECTION_FAILED,
             self::DATABASE_QUERY_FAILED,
             self::EXTERNAL_SERVICE_ERROR,
-            self::CLOCKIFY_API_ERROR,
             self::INTERNAL_SERVER_ERROR,
             self::NOT_IMPLEMENTED,
             self::MAINTENANCE_MODE,

@@ -78,7 +78,7 @@ function makeUserWithPermissions(array $permissions, ?UserRole $role = null): Us
  */
 function superAdmin(): User
 {
-    return User::query()->where('email', 'superadmin@evoriq.test')->firstOrFail();
+    return User::query()->where('email', 'superadmin@example.test')->firstOrFail();
 }
 
 /**

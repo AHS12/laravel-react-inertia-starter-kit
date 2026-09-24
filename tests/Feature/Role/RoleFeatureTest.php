@@ -25,7 +25,7 @@ test('creates a custom role with permissions', function () {
     $this->actingAs(superAdmin())
         ->post(route('roles.store'), [
             'name' => 'Project Manager',
-            'permissions' => ['user.view', 'report.view'],
+            'permissions' => ['user.view', 'file.view'],
         ])
         ->assertRedirect(route('roles.index'));
 
@@ -33,7 +33,7 @@ test('creates a custom role with permissions', function () {
 
     expect($role->is_system)->toBeFalse()
         ->and($role->hasPermissionTo('user.view'))->toBeTrue()
-        ->and($role->hasPermissionTo('report.view'))->toBeTrue();
+        ->and($role->hasPermissionTo('file.view'))->toBeTrue();
 });
 
 test('drops system permissions from custom roles', function () {
@@ -84,14 +84,14 @@ test('updates a system role permissions but not its name', function () {
     $this->actingAs(superAdmin())
         ->patch(route('roles.update', $role), [
             'name' => 'Renamed Admin',
-            'permissions' => ['report.view', 'settings.view'],
+            'permissions' => ['file.view', 'settings.view'],
         ])
         ->assertRedirect(route('roles.index'));
 
     $role->refresh();
 
     expect($role->name)->toBe(UserRole::ADMIN->value)
-        ->and($role->hasPermissionTo('report.view'))->toBeTrue()
+        ->and($role->hasPermissionTo('file.view'))->toBeTrue()
         ->and($role->hasPermissionTo('settings.view'))->toBeTrue();
 });
 

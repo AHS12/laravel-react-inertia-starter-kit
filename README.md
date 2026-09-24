@@ -1,15 +1,11 @@
-# Evoriq
+# Laravel React Starter
 
-Evoriq is a **historical time analytics and reporting platform** built on top of
-[Clockify](https://clockify.me). Clockify remains the time-tracking source of
-truth; Evoriq synchronizes workspace data into its own database and provides
-fast, flexible analytics, reporting, comparisons and exports over long periods
-of time.
+A **production-ready Laravel + Inertia/React starter kit**: authentication
+(Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
+media, an async export/import Data Processing Center, a first-run setup wizard,
+developer tools and a full quality gate — wired together with a strict
+Service–Repository architecture so product work can start on day one.
 
-> Clockify is the time-tracking system. Evoriq is the historical analytics
-> system.
-
-- Full technical design: [`TDR.md`](TDR.md)
 - Architecture & contributor conventions: [`AGENTS.md`](AGENTS.md)
 
 ---
@@ -22,19 +18,13 @@ of time.
   registry.
 - **User & role management**, including email invitations.
 - **Settings** — general, mail, appearance, per-user profile and security.
+- **Notifications** — in-app notification center with per-user preferences.
 - **Media & file uploads** via `spatie/laravel-medialibrary`.
-- **Async exports** tracked as data-processing jobs and generated in the
-  background.
+- **Async exports & imports** — a Data Processing Center tracking queued jobs
+  with live progress, artifact download and pruning.
 - **Developer tooling** — Telescope, Pulse, Horizon and health checks.
 - **First-run browser installer** — configure the database and runtime drivers
   without touching `.env` by hand.
-- **Clockify HTTP client** — a single rate-limited, paginated integration
-  boundary ready for the synchronization engine.
-
-> **Status:** the platform foundation (authentication, RBAC, settings, media,
-> exports, developer tooling and the installer) is in place. The Clockify
-> synchronization engine and the analytics/reporting surface are under active
-> development; see [`TDR.md`](TDR.md) for the full design.
 
 ## Tech stack
 
@@ -58,7 +48,7 @@ of time.
 - **Node.js** `^20.19.0 || >=22.12.0` and npm (Vite 8 requirement)
 - A database: **PostgreSQL** (recommended), MySQL/MariaDB, or **SQLite** (no
   server required)
-- **Redis** — optional. Evoriq detects it and upgrades automatically; without it
+- **Redis** — optional. The app detects it and upgrades automatically; without it
   the database/file drivers are used.
 
 ---
@@ -97,7 +87,7 @@ Both paths converge on the same code, so you can start with either.
 When seeded via `migrate --seed` in the `local` or `testing` environment:
 
 ```
-Email:    superadmin@evoriq.test
+Email:    superadmin@example.test
 Password: 123456
 ```
 
@@ -139,7 +129,7 @@ APP_URL=http://localhost:8000
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=evoriq
+DB_DATABASE=laravel_react_starter
 DB_USERNAME=postgres
 DB_PASSWORD=
 
@@ -151,10 +141,6 @@ QUEUE_CONNECTION=database
 
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
-
-# Clockify API (per-connection credentials are stored encrypted, not here)
-CLOCKIFY_API_URL=https://api.clockify.me/api/v1
-CLOCKIFY_REPORTS_URL=https://reports.api.clockify.me/v1
 ```
 
 ### Drivers & Redis
@@ -179,12 +165,13 @@ php artisan app:configure-drivers --session=redis --cache=redis --queue=redis
 
 ## Queues & scheduler
 
-Long-running work (exports today, and the upcoming Clockify sync) runs through
+Long-running work (exports and imports) runs through
 the queue on the `critical`, `default` and `heavy` channels.
 
 ```sh
 composer run dev                       # includes a queue listener on all channels
 composer run queue                     # or: php artisan queue:work --queue=critical,default,heavy
+php artisan queue:work --queue=critical,default,heavy   # run a queue worker explicitly
 php artisan schedule:work              # run the scheduler locally
 ```
 
@@ -205,6 +192,8 @@ and therefore runs on **Linux only**. On Windows use `php artisan queue:work`.
 | `composer setup` | Full non-interactive install (deps, env, key, drivers, migrate + seed, assets) |
 | `composer run dev` | Start server, queue worker and Vite |
 | `composer run queue` | Start a queue worker for all channels |
+| `php artisan queue:work --queue=critical,default,heavy` | Run a queue worker for all channels |
+| `php artisan schedule:work` | Run the scheduler locally |
 | `php artisan app:configure-drivers` | Detect Redis and configure session/cache/queue |
 | `php artisan migrate --seed` | Migrate and seed RBAC + settings |
 | `php artisan storage:link` | Link `public/storage` for uploaded media |
@@ -256,7 +245,6 @@ app/
   Models/             Eloquent models
   Repositories/       All database access (+ Contracts interfaces)
   Services/           Business logic and transactions
-    Clockify/         The single HTTP boundary to Clockify
     Setup/            First-run installer services
   Registry/           Permission, queue and maintenance registries
 database/
@@ -305,6 +293,14 @@ Tests use Pest with `RefreshDatabase` against an in-memory SQLite database
   (`composer run dev` or `composer run queue`).
 - **Horizon won't start on Windows** — it is Linux-only; use
   `php artisan queue:work`.
+
+---
+
+## Branding
+
+The bundled logo (`public/favicon.svg`, `resources/js/components/app-logo-icon.tsx`)
+is a neutral placeholder — replace it with your own mark and set the application
+name via `APP_NAME` (or Administration → Settings → Appearance after install).
 
 ---
 

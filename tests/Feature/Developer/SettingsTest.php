@@ -10,7 +10,7 @@ test('syncs the default settings', function () {
 
     $this->artisan('settings:sync')->assertSuccessful();
 
-    expect(Settings::get(SettingKey::SYSTEM_NAME->value))->toBe('Evoriq')
+    expect(Settings::get(SettingKey::SYSTEM_NAME->value))->toBe('Laravel React Starter')
         ->and(Settings::get(SettingKey::EXPORT_CLEANUP_DAYS->value))->toBe(7);
 });
 

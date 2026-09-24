@@ -18,7 +18,7 @@ it('seeds the system roles', function () {
 });
 
 it('seeds the super admin with every permission', function () {
-    $superAdmin = User::where('email', 'superadmin@evoriq.test')->first();
+    $superAdmin = User::where('email', 'superadmin@example.test')->first();
 
     expect($superAdmin)->not->toBeNull()
         ->and($superAdmin->hasRole(UserRole::SUPER_ADMIN->value))->toBeTrue()
@@ -26,7 +26,7 @@ it('seeds the super admin with every permission', function () {
 });
 
 it('grants the super admin every ability through the gate', function () {
-    $superAdmin = User::where('email', 'superadmin@evoriq.test')->firstOrFail();
+    $superAdmin = User::where('email', 'superadmin@example.test')->firstOrFail();
 
     expect(Gate::forUser($superAdmin)->allows('delete', User::factory()->create()))->toBeTrue();
 });

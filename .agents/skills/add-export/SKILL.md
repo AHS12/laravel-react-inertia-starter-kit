@@ -1,7 +1,7 @@
 ---
 name: add-export
-description: 'Register a new exportable entity on Evoriq''s async export pipeline (exporter class + DataEntity enum + tests).'
-argument-hint: 'Entity name, for example: Entry or Report.'
+description: 'Register a new exportable entity on the async export pipeline (exporter class + DataEntity enum + tests).'
+argument-hint: 'Entity name, for example: Invoice or Report.'
 ---
 
 # Add Export
@@ -10,9 +10,9 @@ argument-hint: 'Entity name, for example: Entry or Report.'
 
 When a new entity must be exportable to CSV/XLSX. Exports run asynchronously
 through `App\Jobs\ProcessExport` on the `heavy` queue and are tracked with
-`App\Models\DataProcessingJob`. See `AGENTS.md` §7.14 and TDR §33.
+`App\Models\DataProcessingJob`. See `AGENTS.md` §7.14.
 
-**Exports read from PostgreSQL — never query the Clockify API from an exporter.**
+**Exports read from the application database — never query external services from an exporter.**
 
 ## Steps
 

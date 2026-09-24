@@ -1,6 +1,6 @@
 ---
 name: create-inertia-feature
-description: 'Build a typed React/Inertia feature for Evoriq: page, feature components, types, Wayfinder navigation, forms and styling following the frontend best practices.'
+description: 'Build a typed React/Inertia feature: page, feature components, types, Wayfinder navigation, forms and styling following the frontend best practices.'
 argument-hint: 'Feature name and purpose, for example: Reports index with filters and a create form.'
 ---
 

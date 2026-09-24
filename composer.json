@@ -2,10 +2,13 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/react-starter-kit",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "A production-ready Laravel + Inertia/React starter kit with auth, RBAC, settings, notifications, media, async exports/imports, a setup wizard and developer tools.",
     "keywords": [
         "laravel",
-        "framework"
+        "inertia",
+        "react",
+        "starter-kit",
+        "typescript"
     ],
     "license": "MIT",
     "require": {

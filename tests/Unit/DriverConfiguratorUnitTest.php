@@ -12,8 +12,8 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->envPath = tempnam(sys_get_temp_dir(), 'evoriq_env_');
-    file_put_contents($this->envPath, "APP_NAME=Evoriq\n");
+    $this->envPath = tempnam(sys_get_temp_dir(), 'starter_env_');
+    file_put_contents($this->envPath, "APP_NAME=StarterKit\n");
 
     $this->writer = new EnvironmentWriter($this->envPath);
     $this->configurator = new DriverConfigurator($this->writer);

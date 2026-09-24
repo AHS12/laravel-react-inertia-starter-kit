@@ -98,7 +98,7 @@ enum SettingKey: string
     public function defaultValue(): mixed
     {
         return match ($this) {
-            self::SYSTEM_NAME => 'Evoriq',
+            self::SYSTEM_NAME => 'Laravel React Starter',
             self::TIMEZONE => 'UTC',
             self::DATE_FORMAT => 'Y-m-d',
             self::WEEK_START => 'monday',

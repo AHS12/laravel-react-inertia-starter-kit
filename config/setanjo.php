@@ -55,7 +55,7 @@ return [
     | Define the single model class that can be used as tenant
     |
     */
-    // Evoriq is single-tenant at the application level, but per-user
+    // The application is single-tenant at the application level, but per-user
     // preferences (e.g. appearance) are stored as tenant settings scoped to
     // the user via `$user->settings()`. Global settings remain untagged.
     'strict_tenant_model' => env('SETANJO_STRICT_TENANT_MODEL', User::class),

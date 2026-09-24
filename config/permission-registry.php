@@ -41,66 +41,14 @@ return [
         ],
     ],
 
-    'connection' => [
-        'permissions' => [
-            ['name' => 'connection.view', 'group' => 'connection', 'description' => 'View Clockify connections'],
-            ['name' => 'connection.view.all', 'group' => 'connection', 'description' => 'View all connections'],
-            ['name' => 'connection.create', 'group' => 'connection', 'description' => 'Create connections'],
-            ['name' => 'connection.update', 'group' => 'connection', 'description' => 'Update connections'],
-            ['name' => 'connection.delete', 'group' => 'connection', 'description' => 'Delete connections'],
-            ['name' => 'connection.credentials.update', 'group' => 'connection', 'description' => 'Update connection credentials'],
-        ],
-    ],
-
-    'workspace' => [
-        'permissions' => [
-            ['name' => 'workspace.view', 'group' => 'workspace', 'description' => 'View workspaces'],
-            ['name' => 'workspace.view.all', 'group' => 'workspace', 'description' => 'View all workspaces'],
-            ['name' => 'workspace.create', 'group' => 'workspace', 'description' => 'Create workspaces'],
-            ['name' => 'workspace.update', 'group' => 'workspace', 'description' => 'Update workspaces'],
-            ['name' => 'workspace.delete', 'group' => 'workspace', 'description' => 'Delete workspaces'],
-        ],
-    ],
-
-    'sync' => [
-        'permissions' => [
-            ['name' => 'sync.view', 'group' => 'sync', 'description' => 'View sync runs'],
-            ['name' => 'sync.view.all', 'group' => 'sync', 'description' => 'View all sync runs'],
-            ['name' => 'sync.trigger', 'group' => 'sync', 'description' => 'Trigger a synchronization'],
-            ['name' => 'sync.reconcile', 'group' => 'sync', 'description' => 'Run a reconciliation sync'],
-            ['name' => 'sync.delete', 'group' => 'sync', 'description' => 'Cancel or delete sync runs'],
-        ],
-    ],
-
-    'report' => [
-        'permissions' => [
-            ['name' => 'report.view', 'group' => 'report', 'description' => 'View reports'],
-            ['name' => 'report.view.all', 'group' => 'report', 'description' => 'View all reports'],
-            ['name' => 'report.create', 'group' => 'report', 'description' => 'Create reports'],
-            ['name' => 'report.update', 'group' => 'report', 'description' => 'Update reports'],
-            ['name' => 'report.delete', 'group' => 'report', 'description' => 'Delete reports'],
-            ['name' => 'report.export', 'group' => 'report', 'description' => 'Export reports'],
-        ],
-    ],
-
-    'export' => [
-        'permissions' => [
-            ['name' => 'export.create', 'group' => 'export', 'description' => 'Export any entity (global)'],
-        ],
-    ],
-
-    'import' => [
-        'permissions' => [
-            ['name' => 'import.create', 'group' => 'import', 'description' => 'Import any entity (global)'],
-        ],
-    ],
-
     'data-processing' => [
         'permissions' => [
             ['name' => 'data-processing.view', 'group' => 'data-processing', 'description' => 'Open the Data Processing Center and view own jobs'],
             ['name' => 'data-processing.view.all', 'group' => 'data-processing', 'description' => 'View every user\'s processing jobs'],
             ['name' => 'data-processing.manage', 'group' => 'data-processing', 'description' => 'Cancel, retry or duplicate any processing job'],
             ['name' => 'data-processing.delete', 'group' => 'data-processing', 'description' => 'Delete any processing job and its files'],
+            ['name' => 'export.create', 'group' => 'data-processing', 'description' => 'Export any entity (global)'],
+            ['name' => 'import.create', 'group' => 'data-processing', 'description' => 'Import any entity (global)'],
         ],
     ],
 

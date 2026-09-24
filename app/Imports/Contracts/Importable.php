@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 /**
- * Contract every Evoriq importer implements. The job resolves one via
+ * Contract every importer implements. The job resolves one via
  * `DataEntity::makeImporter()` and hands it to maatwebsite/excel.
  */
 interface Importable extends SkipsEmptyRows, ToCollection, WithChunkReading, WithHeadingRow

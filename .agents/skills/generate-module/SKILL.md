@@ -1,6 +1,6 @@
 ---
 name: generate-module
-description: 'Scaffold a Laravel module (migration, model, factory, enum, DTO + FilterDTO, repository + interface, service, request, resource, controller, policy, routes, tests) following Evoriq''s Service–Repository architecture. Use when adding a new entity/module to the backend.'
+description: 'Scaffold a Laravel module (migration, model, factory, enum, DTO + FilterDTO, repository + interface, service, request, resource, controller, policy, routes, tests) following the Service–Repository architecture. Use when adding a new entity/module to the backend.'
 argument-hint: 'Entity name and key fields, for example: Report with name, type, range_start, range_end.'
 ---
 
@@ -13,7 +13,7 @@ feature that needs persistence (e.g. `Connection`, `Report`, `Export`,
 `SyncRun`). Read `AGENTS.md` §7 and `.agents/rules/backend-architecture.md`
 first.
 
-> There is no CRUD generator command in Evoriq. Create files by hand following
+> There is no CRUD generator command in the starter kit. Create files by hand following
 > the checklist below **exactly** — do not deviate from these conventions.
 
 ## 1. Preparation

@@ -1,18 +1,10 @@
 import { Head } from '@inertiajs/react';
-import {
-    Activity,
-    Briefcase,
-    Clock,
-    DollarSign,
-    Plug,
-    Users,
-} from 'lucide-react';
+import { Activity, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { SetupChecklist } from '@/components/dashboard/setup-checklist';
-import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -26,17 +18,13 @@ import type { DashboardStat, SetupStep } from '@/types';
 type Props = {
     stats: DashboardStat[];
     setup: SetupStep[];
-    hasAnalytics: boolean;
 };
 
 const statIcons: Record<string, LucideIcon> = {
-    tracked_hours: Clock,
-    billable: DollarSign,
     users: Users,
-    projects: Briefcase,
 };
 
-export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
+export default function Dashboard({ stats, setup }: Props) {
     return (
         <>
             <Head title="Dashboard" />
@@ -47,7 +35,7 @@ export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
                     description="An overview of your workspace."
                 />
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {stats.map((stat) => (
                         <StatCard
                             key={stat.key}
@@ -66,23 +54,16 @@ export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
                         <CardHeader>
                             <CardTitle>Activity</CardTitle>
                             <CardDescription>
-                                Tracked hours, projects and trends over time.
+                                A live feed of what is happening in your
+                                application.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {hasAnalytics ? null : (
-                                <EmptyState
-                                    icon={Activity}
-                                    title="No analytics yet"
-                                    description="Connect Clockify and import your history to see tracked hours, projects and trends."
-                                    action={
-                                        <Button disabled>
-                                            <Plug />
-                                            Connect Clockify
-                                        </Button>
-                                    }
-                                />
-                            )}
+                            <EmptyState
+                                icon={Activity}
+                                title="No activity yet"
+                                description="As you and your team use the application, recent activity will appear here."
+                            />
                         </CardContent>
                     </Card>
                 </div>

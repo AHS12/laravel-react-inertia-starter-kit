@@ -86,15 +86,15 @@ test('update keeps a system role name but syncs permissions', function () {
 
     $this->repository->shouldReceive('assignablePermissionNames')
         ->once()
-        ->with(['report.view', 'settings.view'], true)
-        ->andReturn(['report.view', 'settings.view']);
+        ->with(['file.view', 'settings.view'], true)
+        ->andReturn(['file.view', 'settings.view']);
 
     $this->repository->shouldReceive('syncPermissions')
         ->once()
-        ->with($role, ['report.view', 'settings.view'])
+        ->with($role, ['file.view', 'settings.view'])
         ->andReturn($role);
 
-    $this->service->update($role, new RoleDTO('Renamed', ['report.view', 'settings.view']));
+    $this->service->update($role, new RoleDTO('Renamed', ['file.view', 'settings.view']));
 });
 
 test('update refuses to modify the super admin role', function () {

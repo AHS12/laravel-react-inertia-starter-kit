@@ -19,8 +19,6 @@ enum NotificationType: string
     case REPORT_COMPLETED = 'report.completed';
     case REPORT_FAILED = 'report.failed';
     case JOB_CANCELLED = 'job.cancelled';
-    case CLOCKIFY_SYNC_COMPLETED = 'clockify.sync.completed';
-    case CLOCKIFY_SYNC_FAILED = 'clockify.sync.failed';
 
     public function label(): string
     {
@@ -34,8 +32,6 @@ enum NotificationType: string
             self::REPORT_COMPLETED => 'Report completed',
             self::REPORT_FAILED => 'Report failed',
             self::JOB_CANCELLED => 'Job cancelled',
-            self::CLOCKIFY_SYNC_COMPLETED => 'Sync completed',
-            self::CLOCKIFY_SYNC_FAILED => 'Sync failed',
         };
     }
 
@@ -44,10 +40,8 @@ enum NotificationType: string
         return match ($this) {
             self::SYSTEM_ANNOUNCEMENT => NotificationPriority::INFO,
             self::USER_INVITED => NotificationPriority::SUCCESS,
-            self::EXPORT_COMPLETED, self::IMPORT_COMPLETED, self::REPORT_COMPLETED,
-            self::CLOCKIFY_SYNC_COMPLETED => NotificationPriority::SUCCESS,
-            self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED,
-            self::CLOCKIFY_SYNC_FAILED => NotificationPriority::CRITICAL,
+            self::EXPORT_COMPLETED, self::IMPORT_COMPLETED, self::REPORT_COMPLETED => NotificationPriority::SUCCESS,
+            self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED => NotificationPriority::CRITICAL,
             self::JOB_CANCELLED => NotificationPriority::WARNING,
         };
     }
@@ -67,8 +61,6 @@ enum NotificationType: string
             self::REPORT_COMPLETED => 'file-text',
             self::REPORT_FAILED => 'file-x',
             self::JOB_CANCELLED => 'ban',
-            self::CLOCKIFY_SYNC_COMPLETED => 'refresh-cw',
-            self::CLOCKIFY_SYNC_FAILED => 'alert-triangle',
         };
     }
 

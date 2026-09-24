@@ -91,8 +91,8 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
             <div className="space-y-1">
                 <h2 className="text-xl font-semibold">Database</h2>
                 <p className="text-sm text-muted-foreground">
-                    Where Evoriq stores its synchronized data. SQLite works out
-                    of the box with no server required.
+                    Where the application stores its data. SQLite works out of
+                    the box with no server required.
                 </p>
             </div>
 

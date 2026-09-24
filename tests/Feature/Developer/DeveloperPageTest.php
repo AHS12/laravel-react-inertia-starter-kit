@@ -33,7 +33,7 @@ test('forbids users without the developer permission', function () {
 });
 
 test('allows the super admin to access developer tools', function () {
-    $user = User::where('email', 'superadmin@evoriq.test')->firstOrFail();
+    $user = User::where('email', 'superadmin@example.test')->firstOrFail();
 
     $this->actingAs($user)
         ->get(route('admin.settings.developer.edit'))

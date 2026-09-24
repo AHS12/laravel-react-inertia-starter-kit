@@ -28,8 +28,8 @@ export default function AppearanceSettings() {
                 <CardHeader>
                     <CardTitle>Appearance</CardTitle>
                     <CardDescription>
-                        Choose how Evoriq looks. Your preferences are saved to
-                        your account and follow you across devices.
+                        Choose how the application looks. Your preferences are
+                        saved to your account and follow you across devices.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">

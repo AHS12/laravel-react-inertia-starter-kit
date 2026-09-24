@@ -1,17 +1,17 @@
 # AGENTS.md
 
-Guidance for AI agents and humans working in the Evoriq repository. This file is
-the **primary authority** for architecture, conventions and workflow. If anything
-conflicts with a default framework behavior, this document wins.
-
-See `TDR.md` for the full technical design — it is the source of truth for
-product and architecture decisions.
+Guidance for AI agents and humans working in the Laravel React Starter
+repository. This file is the **primary authority** for architecture,
+conventions and workflow. If anything conflicts with a default framework
+behavior, this document wins.
 
 ## 1. What this is
 
-Evoriq is a **historical time analytics and reporting** platform built on top of
-Clockify. Clockify remains the time-tracking source; Evoriq synchronizes data
-into PostgreSQL and provides analytics, reporting, comparisons and exports.
+A **production-ready Laravel + Inertia/React starter kit**: authentication
+(Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
+media, an async export/import Data Processing Center, a first-run setup wizard,
+developer tools and a full quality gate — wired together with a strict
+Service–Repository architecture so product work can start on day one.
 
 ## 2. Stack
 
@@ -27,7 +27,7 @@ into PostgreSQL and provides analytics, reporting, comparisons and exports.
 Services are provided by **EnvKit** (nginx, PHP-FPM, PostgreSQL, Redis, mailpit).
 Start them with `envkit start` and check with `envkit status`.
 
-Local database: `evoriq` on PostgreSQL (`127.0.0.1:5432`, user `postgres`).
+Local database: `laravel_react_starter` on PostgreSQL (`127.0.0.1:5432`, user `postgres`).
 Fallback: set `DB_CONNECTION=sqlite` in `.env`.
 
 ## 4. Setup and run
@@ -130,8 +130,9 @@ React (resources/js)  <── typed props (Resources / arrays) <── Controlle
 | Job                | `app/Jobs/{Module}/{Job}.php`                                         | Async work                                  |
 | Exception          | `app/Exceptions/{Name}.php`                                           | Domain errors                               |
 
-`app/Services/Clockify/**` is **infrastructure**, not a module service: it is the
-single HTTP boundary to Clockify (client, paginator, rate limiter). See §7.10.
+External integrations (third-party APIs) belong under `app/Services/{Vendor}/**`
+as infrastructure — client, paginator and rate limiter classes — never inside
+module services.
 
 ### 7.2 Controllers (thin)
 
@@ -163,7 +164,7 @@ public function store(StoreReportRequest $request, ReportService $service)
 - Receive DTOs (or primitives), orchestrate repositories, return models /
   paginators / value objects.
 - **Never run queries** — that is the repository's job.
-- Cross-cutting infra (Clockify, exports) is injected as a dependency.
+- Cross-cutting infra (external API clients, exports) is injected as a dependency.
 
 ### 7.4 Repositories (all data access)
 
@@ -217,8 +218,10 @@ public function store(StoreReportRequest $request, ReportService $service)
 ### 7.9 Jobs, queue & scheduler
 
 - Jobs are thin: they resolve a service and delegate; no business logic.
-- Sync/export jobs must be **idempotent and resumable** (see TDR §23–24).
-- All Clockify traffic goes through the rate limiter — jobs never bypass it.
+- Long-running jobs must be **idempotent and resumable** (see
+  `docs/JOB_RELIABILITY_PLAN.md`).
+- All third-party API traffic goes through its client's rate limiter — jobs never
+  bypass it.
 - Schedule recurring work in `routes/console.php` (`Schedule::command(...)`).
 - `composer run dev` already runs a queue worker; use `php artisan schedule:work`
   when testing the scheduler.
@@ -243,19 +246,20 @@ public function store(StoreReportRequest $request, ReportService $service)
   and therefore **runs on Linux only** (its provider is registered conditionally
   and excluded from auto-discovery). On Windows, run `php artisan queue:work`.
 
-### 7.10 Clockify integration boundary
+### 7.10 External API integration boundary
 
-- **Never** call the Clockify API directly from controllers, models, jobs or
-  services. Use `App\Services\Clockify\ClockifyClient` (with
-  `ClockifyPaginator` / `ClockifyRateLimiter`), configured via `config/clockify.php`.
-- Credentials are per-connection, stored encrypted, and never exposed to the
-  frontend. Bind them with `ClockifyClient::forCredentials(...)`.
-- Keep Clockify IDs separate from internal IDs; use upsert semantics keyed by the
-  Clockify ID.
+- **Never** call a third-party API directly from controllers, models, jobs or
+  services. Wrap each vendor in `app/Services/{Vendor}` with a client class
+  (plus paginator/rate limiter when relevant), configured via its own config
+  file and `.env` keys.
+- Credentials are stored encrypted, never exposed to the frontend, and never
+  committed.
+- Keep vendor IDs separate from internal IDs; use upsert semantics keyed by the
+  vendor ID.
 
 ### 7.11 Single-tenant data access
 
-Evoriq is **single-tenant** — there are no organizations or tenant scopes.
+The application is **single-tenant** — there are no organizations or tenant scopes.
 Ownership is tracked with plain foreign keys (e.g. `user_id`); derive the owning
 user from `auth()->id()` in the service and never accept it from the client.
 Enforce access with policies on every action.
@@ -264,8 +268,8 @@ When combining `where` / `orWhere`, group the `orWhere` in a closure so the
 conditions bind as intended:
 
 ```php
-Entry::where(function ($q) {
-    $q->where('billable', true)->orWhere('locked', true);
+User::where(function ($q) {
+    $q->where('active', true)->orWhere('invited', true);
 })->get();
 ```
 
@@ -295,7 +299,7 @@ Entry::where(function ($q) {
   permissions + `Gate::before` bypass), **Admin**, **Member**. System roles have
   `is_system = true` and must not be deleted by the app.
 - `php artisan migrate --seed` seeds **RBAC only** (no domain demo data).
-  Local super admin: `superadmin@evoriq.test` / `123456` — never seed in production.
+  Local super admin: `superadmin@example.test` / `123456` — never seed in production.
 - Authorize every action with a policy and `Gate::authorize(...)`.
 
 ### 7.14 Exports, imports & the Data Processing Center
@@ -312,8 +316,8 @@ Entry::where(function ($q) {
   `App\Exports\Contracts\Exportable` (`collection`, `headings`, `total`,
   `stage`); importers live in `app/Imports` and implement
   `App\Imports\Contracts\Importable`. Files use `maatwebsite/excel` on the disk
-  in `config/exports.php`. Exports/imports read from PostgreSQL — **never** query
-  Clockify directly (TDR §33).
+  in `config/exports.php`. Exports/imports read from the application database —
+  **never** query external services directly from an export/import job.
 - The **Data Processing Center UI** lives at `/activity` (nav: **Job activity**)
   (`DataProcessingJob\ActivityController`, `pages/data-processing/index.tsx`) and
   polls live progress; artifacts are also browsable under Files → Generated,
@@ -476,6 +480,5 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
   - `.agents/skills/generate-module` — scaffold a backend module
   - `.agents/skills/generate-tests` — Pest unit + feature tests
   - `.agents/skills/create-inertia-feature` — build a typed React/Inertia feature
-  - `.agents/skills/clockify-sync-feature` — add Clockify sync work safely
   - `.agents/skills/add-permission` — declare, sync and enforce a permission
   - `.agents/skills/add-export` — register a new async export entity

@@ -1,6 +1,6 @@
 ---
 name: generate-tests
-description: 'Generate Pest unit tests (service layer with Mockery) and feature tests (controllers/pages) for an Evoriq module, following the project''s 1:1 testing mapping.'
+description: 'Generate Pest unit tests (service layer with Mockery) and feature tests (controllers/pages) for a module, following the project''s 1:1 testing mapping.'
 argument-hint: 'Module name, for example: Report.'
 ---
 
@@ -117,8 +117,7 @@ test('rejects invalid data', function () {
 - Feature assertions: `assertOk()`, `assertRedirect()`, `assertSessionHasErrors()`,
   `assertDatabaseHas()`.
 - Test domain exceptions with `->toThrow(...)`.
-- Never hit the real Clockify API — `Http::fake()` (see the
-  `clockify-sync-feature` skill).
+- Never hit real external APIs in tests — `Http::fake()` any outbound HTTP.
 - `tests/Unit` files must opt in with
   `uses(Tests\TestCase::class, RefreshDatabase::class);` (only the `Feature`
   suite gets these automatically).

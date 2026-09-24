@@ -37,7 +37,7 @@ Controller → Service → Repository → Model → PostgreSQL
   `whenLoaded`; never hand-map relations.
 - **Enums** for every fixed value set — no magic strings.
 - **Custom exceptions live in `app/Exceptions/`** (never inside module folders).
-- **Clockify HTTP only through `app/Services/Clockify`** (see `AGENTS.md` §7.10).
+- **Third-party HTTP only through `app/Services/{Vendor}` infrastructure classes** (see `AGENTS.md` §7.10).
 
 ## Red flags (reject on sight)
 

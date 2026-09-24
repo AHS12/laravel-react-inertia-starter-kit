@@ -15,8 +15,8 @@ beforeEach(function () {
     // Start from a truly uninstalled state: the suite seeds a super admin.
     User::query()->delete();
 
-    $this->envPath = tempnam(sys_get_temp_dir(), 'evoriq_env_');
-    file_put_contents($this->envPath, "APP_NAME=Evoriq\n");
+    $this->envPath = tempnam(sys_get_temp_dir(), 'starter_env_');
+    file_put_contents($this->envPath, "APP_NAME=StarterKit\n");
 
     $this->app->instance(EnvironmentWriter::class, new EnvironmentWriter($this->envPath));
 });
@@ -63,7 +63,7 @@ it('saves the database configuration', function () {
             'driver' => 'pgsql',
             'host' => '127.0.0.1',
             'port' => 5432,
-            'database' => 'evoriq',
+            'database' => 'starter_db',
             'username' => 'postgres',
             'password' => 'secret',
             'create_database' => true,
@@ -84,7 +84,7 @@ it('rejects an unreachable database', function () {
             'driver' => 'pgsql',
             'host' => '127.0.0.1',
             'port' => 5432,
-            'database' => 'evoriq',
+            'database' => 'starter_db',
             'username' => 'postgres',
             'password' => 'secret',
         ])

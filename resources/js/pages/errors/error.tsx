@@ -58,7 +58,7 @@ const content: Record<number, ErrorContent> = {
         icon: Wrench,
         title: 'Under maintenance',
         description:
-            'Evoriq is temporarily down for maintenance. Please check back shortly.',
+            'The application is temporarily down for maintenance. Please check back shortly.',
     },
 };
 
@@ -70,7 +70,7 @@ const fallback: ErrorContent = {
 
 export default function ErrorPage({ status }: Props) {
     const { name } = usePage().props;
-    const appName = name ?? 'Evoriq';
+    const appName = name ?? 'Laravel';
     const { icon: Icon, title, description } = content[status] ?? fallback;
 
     return (

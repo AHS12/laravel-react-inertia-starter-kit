@@ -35,7 +35,6 @@ class RoleSeeder extends Seeder
                     'role.update',
                     'role.delete',
                     'settings.update',
-                    'connection.credentials.update',
                 ])
                 ->get(),
         );
@@ -47,17 +46,10 @@ class RoleSeeder extends Seeder
         $member->syncPermissions(
             Permission::query()
                 ->whereIn('name', [
-                    'report.view',
-                    'report.create',
-                    'report.update',
-                    'report.export',
                     'export.create',
                     'data-processing.view',
                     'user.export',
                     'user.import',
-                    'workspace.view',
-                    'connection.view',
-                    'sync.view',
                     'file.view',
                     'file.create',
                 ])

@@ -1,7 +1,7 @@
 ---
 name: add-permission
-description: 'Declare a new Evoriq permission in the registry, sync it to the database, grant it to system roles and enforce it in a policy with tests.'
-argument-hint: 'Permission name, for example: report.export or connection.credentials.update.'
+description: 'Declare a new permission in the registry, sync it to the database, grant it to system roles and enforce it in a policy with tests.'
+argument-hint: 'Permission name, for example: invoice.export or upload.approve.'
 ---
 
 # Add Permission

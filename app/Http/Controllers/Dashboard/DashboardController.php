@@ -21,13 +21,11 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'stats' => $this->stats(),
             'setup' => $this->setupChecklist(),
-            'hasAnalytics' => false,
         ]);
     }
 
     /**
-     * The headline metric cards. Analytics metrics are placeholders until the
-     * Clockify sync module lands; the user count is live.
+     * The headline metric cards.
      *
      * @return array<int, array{key: string, label: string, value: string, description: string}>
      */
@@ -35,34 +33,16 @@ class DashboardController extends Controller
     {
         return [
             [
-                'key' => 'tracked_hours',
-                'label' => 'Tracked hours',
-                'value' => '—',
-                'description' => 'Awaiting Clockify import',
-            ],
-            [
-                'key' => 'billable',
-                'label' => 'Billable amount',
-                'value' => '—',
-                'description' => 'Awaiting Clockify import',
-            ],
-            [
                 'key' => 'users',
                 'label' => 'Users',
                 'value' => (string) $this->users->countAll(),
-                'description' => 'Accounts in the workspace',
-            ],
-            [
-                'key' => 'projects',
-                'label' => 'Projects',
-                'value' => '—',
-                'description' => 'Awaiting Clockify import',
+                'description' => 'Accounts in the application',
             ],
         ];
     }
 
     /**
-     * The onboarding checklist shown until analytics are available.
+     * The onboarding checklist shown on the dashboard.
      *
      * @return array<int, array{key: string, label: string, description: string, status: string}>
      */
@@ -70,22 +50,22 @@ class DashboardController extends Controller
     {
         return [
             [
-                'key' => 'connect_clockify',
-                'label' => 'Connect Clockify',
-                'description' => 'Link your Clockify workspace using an API key.',
-                'status' => 'coming_soon',
+                'key' => 'configure_app',
+                'label' => 'Configure the application',
+                'description' => 'Set branding, mail and preferences under Administration → Settings.',
+                'status' => 'todo',
             ],
             [
-                'key' => 'import_history',
-                'label' => 'Import history',
-                'description' => 'Synchronize historical time entries and projects.',
-                'status' => 'coming_soon',
+                'key' => 'invite_team',
+                'label' => 'Invite your team',
+                'description' => 'Create users and assign roles from the Users page.',
+                'status' => 'todo',
             ],
             [
-                'key' => 'view_analytics',
-                'label' => 'View analytics',
-                'description' => 'Explore reports, comparisons and exports.',
-                'status' => 'coming_soon',
+                'key' => 'explore_modules',
+                'label' => 'Explore the starter kit',
+                'description' => 'Browse roles, files, notifications and the Data Processing Center.',
+                'status' => 'todo',
             ],
         ];
     }

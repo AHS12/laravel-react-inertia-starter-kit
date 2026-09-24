@@ -31,7 +31,8 @@ export function SetupChecklist({ steps }: Props) {
             <CardHeader>
                 <CardTitle>Get started</CardTitle>
                 <CardDescription>
-                    Finish setting up Evoriq to unlock analytics.
+                    Finish setting up your application to get the most out of
+                    it.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

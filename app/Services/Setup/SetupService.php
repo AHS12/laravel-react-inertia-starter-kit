@@ -191,10 +191,10 @@ class SetupService
         try {
             return (string) Settings::get(
                 SettingKey::SYSTEM_NAME->value,
-                config('app.name', 'Evoriq'),
+                config('app.name', 'Laravel'),
             );
         } catch (Throwable) {
-            return (string) config('app.name', 'Evoriq');
+            return (string) config('app.name', 'Laravel');
         }
     }
 

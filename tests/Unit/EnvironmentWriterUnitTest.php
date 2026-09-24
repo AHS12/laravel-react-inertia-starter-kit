@@ -7,10 +7,10 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->path = tempnam(sys_get_temp_dir(), 'evoriq_env_');
+    $this->path = tempnam(sys_get_temp_dir(), 'starter_env_');
     file_put_contents(
         $this->path,
-        "APP_NAME=Evoriq\n# keep me\nDB_CONNECTION=pgsql\n",
+        "APP_NAME=StarterKit\n# keep me\nDB_CONNECTION=pgsql\n",
     );
 
     $this->writer = new EnvironmentWriter($this->path);
@@ -24,8 +24,8 @@ afterEach(function () {
 
 test('it reads key value pairs and ignores comments', function () {
     expect($this->writer->read())
-        ->toMatchArray(['APP_NAME' => 'Evoriq', 'DB_CONNECTION' => 'pgsql'])
-        ->and($this->writer->get('APP_NAME'))->toBe('Evoriq');
+        ->toMatchArray(['APP_NAME' => 'StarterKit', 'DB_CONNECTION' => 'pgsql'])
+        ->and($this->writer->get('APP_NAME'))->toBe('StarterKit');
 });
 
 test('it updates existing keys in place and preserves comments', function () {
@@ -60,17 +60,17 @@ test('it writes null as an empty value', function () {
 });
 
 test('it seeds a missing environment file from the example', function () {
-    $directory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'evoriq_env_'.uniqid();
+    $directory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'starter_env_'.uniqid();
     mkdir($directory);
 
-    file_put_contents($directory.DIRECTORY_SEPARATOR.'.env.example', "APP_NAME=Evoriq\n");
+    file_put_contents($directory.DIRECTORY_SEPARATOR.'.env.example', "APP_NAME=StarterKit\n");
 
     $writer = new EnvironmentWriter($directory.DIRECTORY_SEPARATOR.'.env');
 
     expect($writer->exists())->toBeFalse()
         ->and($writer->ensureExists())->toBeTrue()
         ->and($writer->exists())->toBeTrue()
-        ->and($writer->get('APP_NAME'))->toBe('Evoriq');
+        ->and($writer->get('APP_NAME'))->toBe('StarterKit');
 
     @unlink($directory.DIRECTORY_SEPARATOR.'.env');
     @unlink($directory.DIRECTORY_SEPARATOR.'.env.example');

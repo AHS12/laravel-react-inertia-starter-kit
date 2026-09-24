@@ -165,7 +165,7 @@ class SetupController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('Setup complete. Welcome to Evoriq!'),
+            'message' => __('Setup complete. Welcome!'),
         ]);
 
         return to_route('dashboard');

@@ -13,8 +13,8 @@ uses(TestCase::class, RefreshDatabase::class);
 beforeEach(function () {
     Storage::fake('local');
 
-    $this->envPath = tempnam(sys_get_temp_dir(), 'evoriq_env_');
-    file_put_contents($this->envPath, "APP_NAME=Evoriq\n");
+    $this->envPath = tempnam(sys_get_temp_dir(), 'starter_env_');
+    file_put_contents($this->envPath, "APP_NAME=StarterKit\n");
 
     $this->repository = Mockery::mock(UserRepositoryInterface::class);
     $this->writer = new EnvironmentWriter($this->envPath);

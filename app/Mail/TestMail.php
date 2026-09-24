@@ -19,7 +19,7 @@ class TestMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Evoriq mail configuration test',
+            subject: config('app.name', 'Laravel').' mail configuration test',
         );
     }
 
@@ -29,7 +29,7 @@ class TestMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            htmlString: '<p>This is a test email from Evoriq. If you are reading this, your mail settings are working correctly.</p>',
+            htmlString: '<p>This is a test email from '.config('app.name', 'Laravel').'. If you are reading this, your mail settings are working correctly.</p>',
         );
     }
 }

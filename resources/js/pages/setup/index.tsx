@@ -149,20 +149,19 @@ export default function Setup({
             <div className="grid min-h-svh lg:grid-cols-2">
                 <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
                     <div className="relative z-10 text-lg font-semibold">
-                        Evoriq
+                        Laravel React Starter
                     </div>
                     <div className="relative z-10 space-y-3">
                         <h1 className="text-2xl font-semibold">
-                            Set up your workspace
+                            Set up your application
                         </h1>
                         <p className="max-w-sm text-sm text-primary-foreground/70">
-                            Historical time analytics and reporting for
-                            Clockify. This one-time setup configures your
-                            database, runtime drivers and administrator access.
+                            This one-time setup configures your database,
+                            runtime drivers and administrator access.
                         </p>
                     </div>
                     <div className="relative z-10 text-xs text-primary-foreground/50">
-                        © {new Date().getFullYear()} Evoriq
+                        © {new Date().getFullYear()} Laravel React Starter
                     </div>
                 </aside>
 

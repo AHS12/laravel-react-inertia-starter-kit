@@ -43,7 +43,7 @@ class DatabaseConfigurator
             'driver' => $values['DB_CONNECTION'] ?? (string) config('database.default', 'pgsql'),
             'host' => $values['DB_HOST'] ?? '127.0.0.1',
             'port' => (int) ($values['DB_PORT'] ?? 5432),
-            'database' => $values['DB_DATABASE'] ?? 'evoriq',
+            'database' => $values['DB_DATABASE'] ?? 'laravel_react_starter',
             'username' => $values['DB_USERNAME'] ?? 'postgres',
             'password' => '',
         ];

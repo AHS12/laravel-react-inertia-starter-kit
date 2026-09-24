@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3, GitCompareArrows, RefreshCw } from 'lucide-react';
+import { DatabaseBackup, ShieldCheck, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { ThemeToggle } from '@/components/app/theme-toggle';
@@ -7,9 +7,9 @@ import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
 const highlights: { icon: LucideIcon; text: string }[] = [
-    { icon: RefreshCw, text: 'Sync your Clockify history' },
-    { icon: BarChart3, text: 'Analyze trends across any period' },
-    { icon: GitCompareArrows, text: 'Compare projects, people and clients' },
+    { icon: ShieldCheck, text: 'Role-based access control' },
+    { icon: Users, text: 'Users, invitations and permissions' },
+    { icon: DatabaseBackup, text: 'Async exports and imports' },
 ];
 
 export default function AuthSplitLayout({
@@ -18,7 +18,7 @@ export default function AuthSplitLayout({
     description,
 }: AuthLayoutProps) {
     const { name } = usePage().props;
-    const appName = name ?? 'Evoriq';
+    const appName = name ?? 'Laravel React Starter';
 
     return (
         <div className="relative grid min-h-svh lg:grid-cols-2">
@@ -38,7 +38,7 @@ export default function AuthSplitLayout({
 
                 <div className="relative z-10 max-w-md space-y-6">
                     <h2 className="text-2xl font-semibold tracking-tight text-balance">
-                        Historical time analytics for Clockify.
+                        Your application, ready from day one.
                     </h2>
                     <ul className="space-y-3 text-sm text-primary-foreground/70">
                         {highlights.map((highlight) => (
