@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     DatabaseBackup,
+    History,
     KeyRound,
     LifeBuoy,
     ServerCog,
@@ -38,6 +39,12 @@ const features: Feature[] = [
         title: 'Async exports & imports',
         description:
             'Queue-backed data processing center for spreadsheet exports and imports, with live progress.',
+    },
+    {
+        icon: History,
+        title: 'Audit trail',
+        description:
+            'Every security-relevant action is logged automatically — who did what, when and from where — with retention control and export.',
     },
     {
         icon: ServerCog,
@@ -129,9 +136,9 @@ export default function Welcome() {
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-pretty text-muted-foreground">
                                 {appName} is a production-ready starter kit:
                                 authentication, RBAC, settings, notifications,
-                                media, async exports and imports, a setup wizard
-                                and developer tools — so you can start on your
-                                product on day one.
+                                media, async exports and imports, a full audit
+                                trail, a setup wizard and developer tools — so
+                                you can start on your product on day one.
                             </p>
 
                             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">

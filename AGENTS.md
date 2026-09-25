@@ -9,9 +9,10 @@ behavior, this document wins.
 
 A **production-ready Laravel + Inertia/React starter kit**: authentication
 (Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
-media, an async export/import Data Processing Center, a first-run setup wizard,
-developer tools and a full quality gate — wired together with a strict
-Service–Repository architecture so product work can start on day one.
+media, an async export/import Data Processing Center, a full audit trail, a
+first-run setup wizard, developer tools and a full quality gate — wired
+together with a strict Service–Repository architecture so product work can
+start on day one.
 
 ## 2. Stack
 
@@ -368,14 +369,23 @@ User::where(function ($q) {
   the `LogsActivity` trait with a selective `logOnly([...])` allowlist,
   `logOnlyDirty()` and `dontLogEmptyChanges()`. **Never** call `logAll()` /
   `logFillable()`. High-frequency models get named events only (no trait).
-- Named domain events (role changes, suspensions, finished exports, …) are
-  recorded with **`AuditLogService::record()`** from services — never from
-  controllers or jobs. In queued jobs, pass the actor explicitly; `auth()`
-  is empty there.
+- Named domain events (role changes, suspensions, avatar changes, setting
+  updates, finished exports/imports, cancellation requests, …) are recorded
+  with **`AuditLogService::record()`** from services — never from controllers
+  or jobs. In queued jobs, pass the actor explicitly; `auth()` is empty there.
+  `ProcessExport`/`ProcessImport` wrap their run in
+  `CauserResolver::withCauser($owner)` so model events fired during imports
+  attribute to the job owner.
 - Channels are `App\Enums\AuditLogName` (`auth`, `security`, `rbac`,
-  `settings`, `domain`), events `App\Enums\AuditEvent`; each channel has a
-  retention window in `config/audit.php`, enforced by the scheduled
-  `audit:clean` command and a manual prune gated by `audit.manage`.
+  `settings`, `domain`), events `App\Enums\AuditEvent`.
+- **Retention is configurable per channel** through Administration → Settings
+  → Audit log (`SettingKey::AUDIT_RETENTION_*`, options 6 months – 10 years).
+  `AuditLogName::retentionDays()` resolves stored setting → default →
+  `config/audit.php` fallback (the single choke point used by the scheduled
+  `audit:clean` command and the manual prune gated by `audit.manage`).
+- **Export** rides the Data Processing Center: `DataEntity::AUDIT_LOGS` +
+  `AuditLogExport`, gated by `audit.export` (or global `export.create`); the
+  audit page passes its current filters into the export job.
 - Secrets never reach the log: `config/audit.php` `redacted_attributes` is
   enforced centrally by `App\ActivityLog\AuditLogAction` (with
   `default_except_attributes` in `config/activitylog.php` as the pre-diff

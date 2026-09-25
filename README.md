@@ -2,9 +2,10 @@
 
 A **production-ready Laravel + Inertia/React starter kit**: authentication
 (Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
-media, an async export/import Data Processing Center, a first-run setup wizard,
-developer tools and a full quality gate — wired together with a strict
-Service–Repository architecture so product work can start on day one.
+media, an async export/import Data Processing Center, a full audit trail, a
+first-run setup wizard, developer tools and a full quality gate — wired
+together with a strict Service–Repository architecture so product work can
+start on day one.
 
 - Architecture & contributor conventions: [`AGENTS.md`](AGENTS.md)
 
@@ -20,6 +21,10 @@ Service–Repository architecture so product work can start on day one.
 - **Settings** — general, mail, appearance, per-user profile and security.
 - **Notifications** — in-app notification center with per-user preferences.
 - **Media & file uploads** via `spatie/laravel-medialibrary`.
+- **Audit trail** — automatic "who did what" logging (model changes, auth
+  events, RBAC, settings, domain events) browsable at `/audit-logs` with
+  cursor pagination, per-channel retention settings, manual pruning and
+  CSV/XLSX export.
 - **Async exports & imports** — a Data Processing Center tracking queued jobs
   with live progress, artifact download and pruning.
 - **Developer tooling** — Telescope, Pulse, Horizon and health checks.
@@ -175,8 +180,8 @@ php artisan queue:work --queue=critical,default,heavy   # run a queue worker exp
 php artisan schedule:work              # run the scheduler locally
 ```
 
-Scheduled work (`routes/console.php`): completed data-processing cleanup,
-health checks and Pulse metrics.
+Scheduled work (`routes/console.php`): audit log retention pruning, completed
+data-processing cleanup, health checks and Pulse metrics.
 
 **Horizon** monitors queues in production but requires `ext-pcntl`/`ext-posix`
 and therefore runs on **Linux only**. On Windows use `php artisan queue:work`.
@@ -254,7 +259,7 @@ resources/js/
   pages/              Inertia pages
   components/         Feature UI + shadcn/ui primitives
   routes/ actions/    Wayfinder-generated helpers (do not edit)
-routes/               web, settings, exports, files, users, roles, admin, setup
+routes/               web, settings, exports, files, users, roles, audit, admin, setup
 tests/                Pest unit + feature tests
 ```
 
