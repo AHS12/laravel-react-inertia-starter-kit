@@ -13,6 +13,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DashboardStat, SetupStep } from '@/types';
 
 type Props = {
@@ -25,23 +26,29 @@ const statIcons: Record<string, LucideIcon> = {
 };
 
 export default function Dashboard({ stats, setup }: Props) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title={t('Dashboard')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Dashboard"
-                    description="An overview of your workspace."
+                    title={t('Dashboard')}
+                    description={t('An overview of your workspace.')}
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {stats.map((stat) => (
                         <StatCard
                             key={stat.key}
-                            label={stat.label}
+                            label={t(stat.label)}
                             value={stat.value}
-                            description={stat.description ?? undefined}
+                            description={
+                                stat.description
+                                    ? t(stat.description)
+                                    : undefined
+                            }
                             icon={statIcons[stat.key]}
                         />
                     ))}
@@ -52,17 +59,20 @@ export default function Dashboard({ stats, setup }: Props) {
 
                     <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>Activity</CardTitle>
+                            <CardTitle>{t('Activity')}</CardTitle>
                             <CardDescription>
-                                A live feed of what is happening in your
-                                application.
+                                {t(
+                                    'A live feed of what is happening in your application.',
+                                )}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <EmptyState
                                 icon={Activity}
-                                title="No activity yet"
-                                description="As you and your team use the application, recent activity will appear here."
+                                title={t('No activity yet')}
+                                description={t(
+                                    'As you and your team use the application, recent activity will appear here.',
+                                )}
                             />
                         </CardContent>
                     </Card>

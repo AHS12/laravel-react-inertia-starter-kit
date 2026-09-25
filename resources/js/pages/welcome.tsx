@@ -11,9 +11,11 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { LanguageToggle } from '@/components/app/language-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { dashboard, home, login } from '@/routes';
+import { useTranslation } from '@/hooks/use-translation';
 
 type Feature = {
     icon: LucideIcon;
@@ -86,6 +88,7 @@ const steps = [
 
 export default function Welcome() {
     const { auth, name } = usePage().props;
+    const { t } = useTranslation();
     const appName = name ?? 'Laravel React Starter';
 
     return (
@@ -104,10 +107,11 @@ export default function Welcome() {
                         </Link>
 
                         <div className="flex items-center gap-2">
+                            <LanguageToggle />
                             <ThemeToggle />
                             <Button asChild size="sm">
                                 <Link href={auth.user ? dashboard() : login()}>
-                                    {auth.user ? 'Dashboard' : 'Log in'}
+                                    {auth.user ? t('Dashboard') : t('Log in')}
                                 </Link>
                             </Button>
                         </div>
@@ -129,16 +133,16 @@ export default function Welcome() {
                             </div>
 
                             <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                                Everything a modern Laravel app needs, already
-                                built.
+                                {t(
+                                    'Everything a modern Laravel app needs, already built.',
+                                )}
                             </h1>
 
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-pretty text-muted-foreground">
-                                {appName} is a production-ready starter kit:
-                                authentication, RBAC, settings, notifications,
-                                media, async exports and imports, a full audit
-                                trail, a setup wizard and developer tools — so
-                                you can start on your product on day one.
+                                {t(
+                                    ':name is a production-ready starter kit: authentication, RBAC, settings, notifications, media, async exports and imports, a full audit trail, a setup wizard and developer tools — so you can start on your product on day one.',
+                                    { name: appName },
+                                )}
                             </p>
 
                             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -147,8 +151,10 @@ export default function Welcome() {
                                         href={auth.user ? dashboard() : login()}
                                     >
                                         {auth.user
-                                            ? 'Go to dashboard'
-                                            : `Log in to ${appName}`}
+                                            ? t('Go to dashboard')
+                                            : t('Log in to :name', {
+                                                  name: appName,
+                                              })}
                                     </Link>
                                 </Button>
                             </div>
@@ -166,10 +172,10 @@ export default function Welcome() {
                                         <feature.icon className="size-5" />
                                     </div>
                                     <h2 className="mt-4 font-medium">
-                                        {feature.title}
+                                        {t(feature.title)}
                                     </h2>
                                     <p className="mt-1.5 text-sm text-muted-foreground">
-                                        {feature.description}
+                                        {t(feature.description)}
                                     </p>
                                 </div>
                             ))}
@@ -180,11 +186,12 @@ export default function Welcome() {
                         <div className="mx-auto w-full max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
                             <div className="max-w-2xl">
                                 <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                                    Up and running in three steps
+                                    {t('Up and running in three steps')}
                                 </h2>
                                 <p className="mt-3 text-muted-foreground">
-                                    From a fresh checkout to a working
-                                    application with users and permissions.
+                                    {t(
+                                        'From a fresh checkout to a working application with users and permissions.',
+                                    )}
                                 </p>
                             </div>
 
@@ -195,10 +202,10 @@ export default function Welcome() {
                                             {index + 1}
                                         </div>
                                         <h3 className="mt-4 font-medium">
-                                            {step.title}
+                                            {t(step.title)}
                                         </h3>
                                         <p className="mt-1.5 text-sm text-muted-foreground">
-                                            {step.description}
+                                            {t(step.description)}
                                         </p>
                                     </li>
                                 ))}
@@ -214,8 +221,8 @@ export default function Welcome() {
                             <span>{appName}</span>
                         </div>
                         <p>
-                            &copy; {new Date().getFullYear()} {appName}. Built
-                            on your own data.
+                            &copy; {new Date().getFullYear()} {appName}.{' '}
+                            {t('Built on your own data.')}
                         </p>
                     </div>
                 </footer>
