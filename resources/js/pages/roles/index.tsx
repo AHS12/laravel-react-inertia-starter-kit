@@ -9,6 +9,7 @@ import { DataTablePagination } from '@/components/app/data-table/data-table-pagi
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { PageHeader } from '@/components/app/page-header';
 import { RoleFormDialog } from '@/components/role/role-form-dialog';
+import { RoleDetailsSheet } from '@/components/role/role-details-sheet';
 import { RoleRowActions } from '@/components/role/role-row-actions';
 import { SystemRoleBadge } from '@/components/role/system-role-badge';
 import { Button } from '@/components/ui/button';
@@ -17,8 +18,10 @@ import {
     useDataTableFilters,
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
+import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/roles';
 import type { Paginated, Permission, Role } from '@/types';
+import { appLocale } from '@/lib/locale';
 
 type Filters = {
     search?: string | null;
@@ -39,7 +42,7 @@ function formatDate(value?: string): string {
         return '—';
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(appLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -48,9 +51,11 @@ function formatDate(value?: string): string {
 
 export default function RolesIndex({ roles, filters, permissions }: Props) {
     const can = useCan();
+    const { t } = useTranslation();
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [pendingDelete, setPendingDelete] = useState<Role | null>(null);
+    const [detailsRole, setDetailsRole] = useState<Role | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
 
@@ -64,7 +69,10 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         setFormOpen(true);
     };
 
-    const { apply } = useDataTableFilters(index.url(), filters as TableFilters);
+    const { apply, isLoading } = useDataTableFilters(
+        index.url(),
+        filters as TableFilters,
+    );
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction === 'desc' }]
@@ -88,7 +96,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
             accessorKey: 'name',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Role" />
+                <DataTableColumnHeader column={column} title={t('Role')} />
             ),
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
@@ -101,7 +109,10 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
             accessorKey: 'permissions_count',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Permissions" />
+                <DataTableColumnHeader
+                    column={column}
+                    title={t('Permissions')}
+                />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-muted-foreground">
@@ -113,7 +124,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
             accessorKey: 'users_count',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Users" />
+                <DataTableColumnHeader column={column} title={t('Users')} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-muted-foreground">
@@ -125,7 +136,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
             accessorKey: 'created_at',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Created" />
+                <DataTableColumnHeader column={column} title={t('Created')} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-muted-foreground">
@@ -136,9 +147,12 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             id: 'actions',
             enableSorting: false,
-            header: () => <span className="sr-only">Actions</span>,
+            header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
-                <div className="flex justify-end">
+                <div
+                    className="flex justify-end"
+                    onClick={(event) => event.stopPropagation()}
+                >
                     <RoleRowActions
                         role={row.original}
                         onEdit={openEdit}
@@ -163,23 +177,25 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
     const emptyAction = can('role.create') ? (
         <Button onClick={openCreate}>
             <Plus />
-            New role
+            {t('New role')}
         </Button>
     ) : undefined;
 
     return (
         <>
-            <Head title="Roles & Permissions" />
+            <Head title={t('Roles & Permissions')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Roles & Permissions"
-                    description="Define roles and choose which permissions each one grants."
+                    title={t('Roles & Permissions')}
+                    description={t(
+                        'Define roles and choose which permissions each one grants.',
+                    )}
                     actions={
                         can('role.create') ? (
                             <Button onClick={openCreate}>
                                 <Plus />
-                                New role
+                                {t('New role')}
                             </Button>
                         ) : undefined
                     }
@@ -191,26 +207,30 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                         setSearch(value);
                         apply({ search: value, page: 1 });
                     }}
-                    searchPlaceholder="Search roles…"
+                    searchPlaceholder={t('Search roles…')}
                 />
 
                 <div className="space-y-4">
                     <DataTable
                         columns={columns}
                         data={roles.data}
+                        isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
+                        onRowClick={setDetailsRole}
                         emptyState={{
                             icon: ShieldCheck,
-                            title: 'No roles found',
-                            description:
+                            title: t('No roles found'),
+                            description: t(
                                 'Try adjusting your search, or create a custom role.',
+                            ),
                             action: emptyAction,
                         }}
                     />
 
                     <DataTablePagination
                         meta={roles.meta}
+                        disabled={isLoading}
                         onPageChange={(page) => apply({ page }, true)}
                     />
                 </div>
@@ -223,15 +243,32 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                         setPendingDelete(null);
                     }
                 }}
-                title="Delete role?"
+                title={t('Delete role?')}
                 description={
                     pendingDelete
-                        ? `${pendingDelete.name} will be permanently deleted. Users assigned to it will lose these permissions.`
+                        ? t(
+                              ':name will be permanently deleted. Users assigned to it will lose these permissions.',
+                              { name: pendingDelete.name },
+                          )
                         : undefined
                 }
-                confirmLabel="Delete"
+                confirmLabel={t('Delete')}
                 destructive
                 onConfirm={confirmDelete}
+            />
+
+            <RoleDetailsSheet
+                role={detailsRole}
+                permissions={permissions}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDetailsRole(null);
+                    }
+                }}
+                onEdit={(role) => {
+                    setDetailsRole(null);
+                    openEdit(role);
+                }}
             />
 
             <RoleFormDialog

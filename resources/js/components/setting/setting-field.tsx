@@ -1,4 +1,5 @@
 import { Combobox } from '@/components/app/combobox';
+import { LanguageSelect } from '@/components/app/language-select';
 import InputError from '@/components/input-error';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type { SettingField as SettingFieldType } from '@/types';
+import { useTranslation } from '@/hooks/use-translation';
+import { useState } from 'react';
 
 type Props = {
     field: SettingFieldType;
@@ -23,16 +26,20 @@ type Props = {
 const SEARCHABLE_THRESHOLD = 10;
 
 export function SettingField({ field, error }: Props) {
+    const { t } = useTranslation();
     const id = `setting-${field.key}`;
     const options = field.options ?? [];
     const searchableSelect =
         field.type === 'select' && options.length > SEARCHABLE_THRESHOLD;
     const booleanChecked =
         field.value === true || field.value === 1 || field.value === '1';
+    const [selectValue, setSelectValue] = useState<string | undefined>(
+        field.value != null ? String(field.value) : undefined,
+    );
 
     return (
         <div className="grid gap-2">
-            <Label htmlFor={id}>{field.label}</Label>
+            <Label htmlFor={id}>{t(field.label)}</Label>
 
             {searchableSelect ? (
                 <Combobox
@@ -42,23 +49,27 @@ export function SettingField({ field, error }: Props) {
                     defaultValue={
                         field.value != null ? String(field.value) : undefined
                     }
-                    placeholder="Select…"
-                    searchPlaceholder="Search…"
+                    placeholder={t('Select…')}
+                    searchPlaceholder={t('Search…')}
                 />
+            ) : field.key === 'app_locale' ? (
+                // The application language is a live per-user switch shared
+                // with the header dropdown — it saves and reloads on change
+                // and is intentionally not part of this form's payload.
+                <LanguageSelect className="w-full" />
             ) : field.type === 'select' ? (
                 <Select
                     name={field.key}
-                    defaultValue={
-                        field.value != null ? String(field.value) : undefined
-                    }
+                    value={selectValue}
+                    onValueChange={setSelectValue}
                 >
                     <SelectTrigger id={id} className="w-full">
-                        <SelectValue placeholder="Select…" />
+                        <SelectValue placeholder={t('Select…')} />
                     </SelectTrigger>
                     <SelectContent>
                         {options.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.label)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -73,7 +84,7 @@ export function SettingField({ field, error }: Props) {
                         defaultChecked={booleanChecked}
                     />
                     <span className="text-sm text-muted-foreground">
-                        {booleanChecked ? 'Enabled' : 'Disabled'}
+                        {booleanChecked ? t('Enabled') : t('Disabled')}
                     </span>
                 </div>
             ) : field.is_secret ? (
@@ -84,8 +95,8 @@ export function SettingField({ field, error }: Props) {
                     autoComplete="new-password"
                     placeholder={
                         field.has_value
-                            ? '•••••••• (leave blank to keep)'
-                            : 'Not set'
+                            ? t('•••••••• (leave blank to keep)')
+                            : t('Not set')
                     }
                 />
             ) : (
@@ -101,7 +112,7 @@ export function SettingField({ field, error }: Props) {
 
             {field.description && (
                 <p className="text-xs text-muted-foreground">
-                    {field.description}
+                    {t(field.description)}
                 </p>
             )}
 

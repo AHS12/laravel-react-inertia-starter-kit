@@ -4,6 +4,7 @@ import {
     BookOpen,
     FolderGit2,
     FolderOpen,
+    History,
     LayoutGrid,
     Settings,
     ShieldCheck,
@@ -24,9 +25,11 @@ import {
 } from '@/components/ui/sidebar';
 import { useActiveJobs } from '@/hooks/use-active-jobs';
 import { useCan } from '@/hooks/use-can';
+import { useTranslation } from '@/hooks/use-translation';
 import { edit as settingsEdit } from '@/routes/admin/settings/general';
 import { dashboard } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
+import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as filesIndex } from '@/routes/files';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
@@ -48,12 +51,13 @@ const footerNavItems: NavItem[] = [
 export function AppSidebar() {
     const can = useCan();
     const activeJobs = useActiveJobs();
+    const { t } = useTranslation();
 
     const workspace: NavItem[] = [];
 
     if (can('data-processing.view') || can('data-processing.view.all')) {
         workspace.push({
-            title: 'Job activity',
+            title: t('Job activity'),
             href: activityIndex(),
             icon: Activity,
             badge: activeJobs,
@@ -62,7 +66,7 @@ export function AppSidebar() {
 
     if (can('file.view')) {
         workspace.push({
-            title: 'Files',
+            title: t('Files'),
             href: filesIndex(),
             icon: FolderOpen,
         });
@@ -72,7 +76,7 @@ export function AppSidebar() {
 
     if (can('user.view.all')) {
         administration.push({
-            title: 'Users',
+            title: t('Users'),
             href: usersIndex(),
             icon: Users,
         });
@@ -80,7 +84,7 @@ export function AppSidebar() {
 
     if (can('role.view.all')) {
         administration.push({
-            title: 'Roles & Permissions',
+            title: t('Roles & Permissions'),
             href: rolesIndex(),
             icon: ShieldCheck,
         });
@@ -88,18 +92,26 @@ export function AppSidebar() {
 
     if (can('settings.view')) {
         administration.push({
-            title: 'Settings',
+            title: t('Settings'),
             href: settingsEdit(),
             icon: Settings,
         });
     }
 
+    if (can('audit.view') || can('audit.view.all')) {
+        administration.push({
+            title: t('Audit Log'),
+            href: auditLogsIndex(),
+            icon: History,
+        });
+    }
+
     const groups: NavGroup[] = [
         {
-            title: 'Overview',
+            title: t('Overview'),
             items: [
                 {
-                    title: 'Dashboard',
+                    title: t('Dashboard'),
                     href: dashboard(),
                     icon: LayoutGrid,
                 },
@@ -108,11 +120,11 @@ export function AppSidebar() {
     ];
 
     if (workspace.length > 0) {
-        groups.push({ title: 'Workspace', items: workspace });
+        groups.push({ title: t('Workspace'), items: workspace });
     }
 
     if (administration.length > 0) {
-        groups.push({ title: 'Administration', items: administration });
+        groups.push({ title: t('Administration'), items: administration });
     }
 
     return (

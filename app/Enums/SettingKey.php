@@ -15,6 +15,7 @@ use DateTimeZone;
 enum SettingKey: string
 {
     case SYSTEM_NAME = 'system_name';
+    case APP_LOCALE = 'app_locale';
     case TIMEZONE = 'timezone';
     case DATE_FORMAT = 'date_format';
     case WEEK_START = 'week_start';
@@ -23,6 +24,12 @@ enum SettingKey: string
 
     case NOTIFICATION_ENABLED = 'notification_enabled';
     case NOTIFICATION_RETENTION_DAYS = 'notification_retention_days';
+
+    case AUDIT_RETENTION_AUTH = 'audit_retention_auth';
+    case AUDIT_RETENTION_SECURITY = 'audit_retention_security';
+    case AUDIT_RETENTION_RBAC = 'audit_retention_rbac';
+    case AUDIT_RETENTION_SETTINGS = 'audit_retention_settings';
+    case AUDIT_RETENTION_DOMAIN = 'audit_retention_domain';
 
     case MAIL_MAILER = 'mail_mailer';
     case MAIL_HOST = 'mail_host';
@@ -41,9 +48,11 @@ enum SettingKey: string
     public function group(): string
     {
         return match ($this) {
-            self::SYSTEM_NAME, self::TIMEZONE, self::DATE_FORMAT, self::WEEK_START,
+            self::SYSTEM_NAME, self::APP_LOCALE, self::TIMEZONE, self::DATE_FORMAT, self::WEEK_START,
             self::EXPORT_CLEANUP_DAYS => 'general',
             self::NOTIFICATION_ENABLED, self::NOTIFICATION_RETENTION_DAYS => 'notifications',
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'audit',
             self::MAIL_MAILER, self::MAIL_HOST, self::MAIL_PORT, self::MAIL_USERNAME,
             self::MAIL_PASSWORD, self::MAIL_ENCRYPTION, self::MAIL_FROM_ADDRESS,
             self::MAIL_FROM_NAME => 'mail',
@@ -54,44 +63,56 @@ enum SettingKey: string
     public function label(): string
     {
         return match ($this) {
-            self::SYSTEM_NAME => 'Workspace name',
-            self::TIMEZONE => 'Timezone',
-            self::DATE_FORMAT => 'Date format',
-            self::WEEK_START => 'Week starts on',
-            self::EXPORT_CLEANUP_DAYS => 'Export retention (days)',
-            self::NOTIFICATION_ENABLED => 'Enable notifications',
-            self::NOTIFICATION_RETENTION_DAYS => 'Notification retention (days)',
-            self::MAIL_MAILER => 'Mailer',
-            self::MAIL_HOST => 'SMTP host',
-            self::MAIL_PORT => 'SMTP port',
-            self::MAIL_USERNAME => 'SMTP username',
-            self::MAIL_PASSWORD => 'SMTP password',
-            self::MAIL_ENCRYPTION => 'Encryption',
-            self::MAIL_FROM_ADDRESS => 'From address',
-            self::MAIL_FROM_NAME => 'From name',
-            self::SETUP_COMPLETED_AT => 'Setup completed at',
+            self::SYSTEM_NAME => __('Workspace name'),
+            self::APP_LOCALE => __('Language'),
+            self::TIMEZONE => __('Timezone'),
+            self::DATE_FORMAT => __('Date format'),
+            self::WEEK_START => __('Week starts on'),
+            self::EXPORT_CLEANUP_DAYS => __('Export retention (days)'),
+            self::NOTIFICATION_ENABLED => __('Enable notifications'),
+            self::NOTIFICATION_RETENTION_DAYS => __('Notification retention (days)'),
+            self::AUDIT_RETENTION_AUTH => __('Auth log retention'),
+            self::AUDIT_RETENTION_SECURITY => __('Security log retention'),
+            self::AUDIT_RETENTION_RBAC => __('Roles & permissions log retention'),
+            self::AUDIT_RETENTION_SETTINGS => __('Settings log retention'),
+            self::AUDIT_RETENTION_DOMAIN => __('Domain log retention'),
+            self::MAIL_MAILER => __('Mailer'),
+            self::MAIL_HOST => __('SMTP host'),
+            self::MAIL_PORT => __('SMTP port'),
+            self::MAIL_USERNAME => __('SMTP username'),
+            self::MAIL_PASSWORD => __('SMTP password'),
+            self::MAIL_ENCRYPTION => __('Encryption'),
+            self::MAIL_FROM_ADDRESS => __('From address'),
+            self::MAIL_FROM_NAME => __('From name'),
+            self::SETUP_COMPLETED_AT => __('Setup completed at'),
         };
     }
 
     public function description(): string
     {
         return match ($this) {
-            self::SYSTEM_NAME => 'Application display name',
-            self::TIMEZONE => 'Default timezone for dates and reports',
-            self::DATE_FORMAT => 'How dates are displayed across the app',
-            self::WEEK_START => 'First day of the week for reports',
-            self::EXPORT_CLEANUP_DAYS => 'Days to keep completed export files before cleanup',
-            self::NOTIFICATION_ENABLED => 'Master switch for creating in-app notifications',
-            self::NOTIFICATION_RETENTION_DAYS => 'Days to keep notifications before they are pruned',
-            self::MAIL_MAILER => 'Transport used to send email',
-            self::MAIL_HOST => 'SMTP server hostname',
-            self::MAIL_PORT => 'SMTP server port',
-            self::MAIL_USERNAME => 'SMTP username',
-            self::MAIL_PASSWORD => 'SMTP password (stored encrypted)',
-            self::MAIL_ENCRYPTION => 'SMTP encryption method',
-            self::MAIL_FROM_ADDRESS => 'Default sender address',
-            self::MAIL_FROM_NAME => 'Default sender name',
-            self::SETUP_COMPLETED_AT => 'Timestamp of the one-time first-run setup',
+            self::SYSTEM_NAME => __('Application display name'),
+            self::APP_LOCALE => __('Language for your account. New users and guests start with the default.'),
+            self::TIMEZONE => __('Default timezone for dates and reports'),
+            self::DATE_FORMAT => __('How dates are displayed across the app'),
+            self::WEEK_START => __('First day of the week for reports'),
+            self::EXPORT_CLEANUP_DAYS => __('Days to keep completed export files before cleanup'),
+            self::NOTIFICATION_ENABLED => __('Master switch for creating in-app notifications'),
+            self::NOTIFICATION_RETENTION_DAYS => __('Days to keep notifications before they are pruned'),
+            self::AUDIT_RETENTION_AUTH => __('How long login and logout events are kept before pruning'),
+            self::AUDIT_RETENTION_SECURITY => __('How long security events (suspensions, failed logins, 2FA) are kept before pruning'),
+            self::AUDIT_RETENTION_RBAC => __('How long role and permission changes are kept before pruning'),
+            self::AUDIT_RETENTION_SETTINGS => __('How long setting changes are kept before pruning'),
+            self::AUDIT_RETENTION_DOMAIN => __('How long domain events (exports, imports, uploads) are kept before pruning'),
+            self::MAIL_MAILER => __('Transport used to send email'),
+            self::MAIL_HOST => __('SMTP server hostname'),
+            self::MAIL_PORT => __('SMTP server port'),
+            self::MAIL_USERNAME => __('SMTP username'),
+            self::MAIL_PASSWORD => __('SMTP password (stored encrypted)'),
+            self::MAIL_ENCRYPTION => __('SMTP encryption method'),
+            self::MAIL_FROM_ADDRESS => __('Default sender address'),
+            self::MAIL_FROM_NAME => __('Default sender name'),
+            self::SETUP_COMPLETED_AT => __('Timestamp of the one-time first-run setup'),
         };
     }
 
@@ -99,12 +120,18 @@ enum SettingKey: string
     {
         return match ($this) {
             self::SYSTEM_NAME => 'Laravel React Starter',
+            self::APP_LOCALE => AppLocale::EN->value,
             self::TIMEZONE => 'UTC',
             self::DATE_FORMAT => 'Y-m-d',
             self::WEEK_START => 'monday',
             self::EXPORT_CLEANUP_DAYS => 7,
             self::NOTIFICATION_ENABLED => true,
             self::NOTIFICATION_RETENTION_DAYS => 90,
+            self::AUDIT_RETENTION_AUTH => 180,
+            self::AUDIT_RETENTION_SECURITY => 365,
+            self::AUDIT_RETENTION_RBAC => 365,
+            self::AUDIT_RETENTION_SETTINGS => 180,
+            self::AUDIT_RETENTION_DOMAIN => 90,
             default => null,
         };
     }
@@ -114,7 +141,10 @@ enum SettingKey: string
         return match ($this) {
             self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT, self::NOTIFICATION_RETENTION_DAYS => 'integer',
             self::NOTIFICATION_ENABLED => 'boolean',
-            self::TIMEZONE, self::MAIL_MAILER, self::MAIL_ENCRYPTION, self::WEEK_START => 'select',
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'select',
+            self::TIMEZONE, self::MAIL_MAILER, self::MAIL_ENCRYPTION, self::WEEK_START,
+            self::APP_LOCALE => 'select',
             default => 'string',
         };
     }
@@ -132,26 +162,47 @@ enum SettingKey: string
                 DateTimeZone::listIdentifiers(),
             ),
             self::MAIL_MAILER => [
-                ['label' => 'SMTP', 'value' => 'smtp'],
-                ['label' => 'Log', 'value' => 'log'],
-                ['label' => 'Array (testing)', 'value' => 'array'],
+                ['label' => __('SMTP'), 'value' => 'smtp'],
+                ['label' => __('Log'), 'value' => 'log'],
+                ['label' => __('Array (testing)'), 'value' => 'array'],
             ],
             self::MAIL_ENCRYPTION => [
-                ['label' => 'None', 'value' => 'none'],
-                ['label' => 'TLS', 'value' => 'tls'],
-                ['label' => 'SSL', 'value' => 'ssl'],
+                ['label' => __('None'), 'value' => 'none'],
+                ['label' => __('TLS'), 'value' => 'tls'],
+                ['label' => __('SSL'), 'value' => 'ssl'],
             ],
             self::WEEK_START => [
-                ['label' => 'Monday', 'value' => 'monday'],
-                ['label' => 'Tuesday', 'value' => 'tuesday'],
-                ['label' => 'Wednesday', 'value' => 'wednesday'],
-                ['label' => 'Thursday', 'value' => 'thursday'],
-                ['label' => 'Friday', 'value' => 'friday'],
-                ['label' => 'Saturday', 'value' => 'saturday'],
-                ['label' => 'Sunday', 'value' => 'sunday'],
+                ['label' => __('Monday'), 'value' => 'monday'],
+                ['label' => __('Tuesday'), 'value' => 'tuesday'],
+                ['label' => __('Wednesday'), 'value' => 'wednesday'],
+                ['label' => __('Thursday'), 'value' => 'thursday'],
+                ['label' => __('Friday'), 'value' => 'friday'],
+                ['label' => __('Saturday'), 'value' => 'saturday'],
+                ['label' => __('Sunday'), 'value' => 'sunday'],
             ],
+            self::APP_LOCALE => AppLocale::options(),
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => self::retentionOptions(),
             default => [],
         };
+    }
+
+    /**
+     * Retention choices shared by every audit log channel (value = days).
+     *
+     * @return array<int, array{label: string, value: string}>
+     */
+    private static function retentionOptions(): array
+    {
+        return [
+            ['label' => __('6 months'), 'value' => '180'],
+            ['label' => __('1 year'), 'value' => '365'],
+            ['label' => __('2 years'), 'value' => '730'],
+            ['label' => __('3 years'), 'value' => '1095'],
+            ['label' => __('5 years'), 'value' => '1825'],
+            ['label' => __('7 years'), 'value' => '2555'],
+            ['label' => __('10 years'), 'value' => '3650'],
+        ];
     }
 
     /**
@@ -179,12 +230,15 @@ enum SettingKey: string
     {
         return match ($this) {
             self::SYSTEM_NAME => ['required', 'string', 'max:255'],
+            self::APP_LOCALE => ['sometimes', 'required', 'in:'.implode(',', array_column(AppLocale::cases(), 'value'))],
             self::TIMEZONE => ['required', 'string', 'timezone'],
             self::DATE_FORMAT => ['required', 'string', 'max:20'],
             self::WEEK_START => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             self::EXPORT_CLEANUP_DAYS => ['required', 'integer', 'min:1', 'max:365'],
             self::NOTIFICATION_ENABLED => ['required', 'boolean'],
             self::NOTIFICATION_RETENTION_DAYS => ['required', 'integer', 'min:1', 'max:3650'],
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => ['required', 'integer', 'min:30', 'max:3650'],
             self::MAIL_MAILER => ['required', 'in:smtp,log,array'],
             self::MAIL_HOST => ['nullable', 'string', 'max:255'],
             self::MAIL_PORT => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -231,9 +285,10 @@ enum SettingKey: string
     public static function groups(): array
     {
         return [
-            'general' => 'General',
-            'notifications' => 'Notifications',
-            'mail' => 'Mail',
+            'general' => __('General'),
+            'notifications' => __('Notifications'),
+            'audit' => __('Audit log'),
+            'mail' => __('Mail'),
         ];
     }
 }

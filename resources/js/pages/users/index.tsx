@@ -6,11 +6,13 @@ import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { DataTable } from '@/components/app/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/app/data-table/data-table-column-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
+import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { PageHeader } from '@/components/app/page-header';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
 import { UserFormDialog } from '@/components/user/user-form-dialog';
+import { UserDetailsSheet } from '@/components/user/user-details-sheet';
 import { UserRowActions } from '@/components/user/user-row-actions';
 import { UserStatusBadge } from '@/components/user/user-status-badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -29,8 +31,10 @@ import {
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
 import { useInitials } from '@/hooks/use-initials';
+import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/users';
 import type { JobOptions, Paginated, User, UserStatus } from '@/types';
+import { appLocale } from '@/lib/locale';
 
 type Filters = {
     search?: string | null;
@@ -55,7 +59,7 @@ function formatDate(value: string | null): string {
         return '—';
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(appLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -71,11 +75,13 @@ export default function UsersIndex({
 }: Props) {
     const can = useCan();
     const getInitials = useInitials();
+    const { t } = useTranslation();
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [role, setRole] = useState(filters.role ?? 'all');
     const [status, setStatus] = useState(filters.status ?? 'all');
     const [pendingDelete, setPendingDelete] = useState<User | null>(null);
+    const [detailsUser, setDetailsUser] = useState<User | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [exportOpen, setExportOpen] = useState(false);
@@ -91,7 +97,10 @@ export default function UsersIndex({
         setFormOpen(true);
     };
 
-    const { apply } = useDataTableFilters(index.url(), filters as TableFilters);
+    const { apply, isLoading } = useDataTableFilters(
+        index.url(),
+        filters as TableFilters,
+    );
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction !== 'asc' }]
@@ -115,7 +124,7 @@ export default function UsersIndex({
             accessorKey: 'name',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="User" />
+                <DataTableColumnHeader column={column} title={t('User')} />
             ),
             cell: ({ row }) => (
                 <div className="flex items-center gap-3">
@@ -138,7 +147,7 @@ export default function UsersIndex({
         {
             accessorKey: 'roles',
             enableSorting: false,
-            header: () => 'Roles',
+            header: () => t('Roles'),
             cell: ({ row }) =>
                 row.original.roles && row.original.roles.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
@@ -156,7 +165,7 @@ export default function UsersIndex({
             accessorKey: 'status',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title={t('Status')} />
             ),
             cell: ({ row }) => (
                 <UserStatusBadge
@@ -169,7 +178,7 @@ export default function UsersIndex({
             accessorKey: 'created_at',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Created" />
+                <DataTableColumnHeader column={column} title={t('Created')} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-muted-foreground">
@@ -180,9 +189,12 @@ export default function UsersIndex({
         {
             id: 'actions',
             enableSorting: false,
-            header: () => <span className="sr-only">Actions</span>,
+            header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
-                <div className="flex justify-end">
+                <div
+                    className="flex justify-end"
+                    onClick={(event) => event.stopPropagation()}
+                >
                     <UserRowActions
                         user={row.original}
                         onEdit={openEdit}
@@ -207,18 +219,20 @@ export default function UsersIndex({
     const emptyAction = can('user.create') ? (
         <Button onClick={openCreate}>
             <Plus />
-            New user
+            {t('New user')}
         </Button>
     ) : undefined;
 
     return (
         <>
-            <Head title="Users" />
+            <Head title={t('Users')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Users"
-                    description="Manage who can access the workspace and what they can do."
+                    title={t('Users')}
+                    description={t(
+                        'Manage who can access the workspace and what they can do.',
+                    )}
                     actions={
                         <>
                             {can('user.import') && (
@@ -227,7 +241,7 @@ export default function UsersIndex({
                                     onClick={() => setImportOpen(true)}
                                 >
                                     <Upload />
-                                    Import
+                                    {t('Import')}
                                 </Button>
                             )}
                             {can('user.export') && (
@@ -236,13 +250,13 @@ export default function UsersIndex({
                                     onClick={() => setExportOpen(true)}
                                 >
                                     <Download />
-                                    Export
+                                    {t('Export')}
                                 </Button>
                             )}
                             {can('user.create') && (
                                 <Button onClick={openCreate}>
                                     <Plus />
-                                    New user
+                                    {t('New user')}
                                 </Button>
                             )}
                         </>
@@ -255,7 +269,7 @@ export default function UsersIndex({
                         setSearch(value);
                         apply({ search: value, page: 1 });
                     }}
-                    searchPlaceholder="Search by name or email…"
+                    searchPlaceholder={t('Search by name or email…')}
                 >
                     <Select
                         value={role}
@@ -271,10 +285,12 @@ export default function UsersIndex({
                         }}
                     >
                         <SelectTrigger className="w-40">
-                            <SelectValue placeholder="All roles" />
+                            <SelectValue placeholder={t('All roles')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All roles</SelectItem>
+                            <SelectItem value="all">
+                                {t('All roles')}
+                            </SelectItem>
                             {roles.map((name) => (
                                 <SelectItem key={name} value={name}>
                                     {name}
@@ -297,10 +313,12 @@ export default function UsersIndex({
                         }}
                     >
                         <SelectTrigger className="w-40">
-                            <SelectValue placeholder="All statuses" />
+                            <SelectValue placeholder={t('All statuses')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All statuses</SelectItem>
+                            <SelectItem value="all">
+                                {t('All statuses')}
+                            </SelectItem>
                             {statuses.map((option) => (
                                 <SelectItem
                                     key={option.value}
@@ -311,29 +329,54 @@ export default function UsersIndex({
                             ))}
                         </SelectContent>
                     </Select>
+
+                    <DataTablePerPage
+                        value={users.meta.per_page}
+                        disabled={isLoading}
+                        onChange={(perPage) =>
+                            apply({ per_page: perPage, page: 1 }, true)
+                        }
+                    />
                 </DataTableToolbar>
 
                 <div className="space-y-4">
                     <DataTable
                         columns={columns}
                         data={users.data}
+                        isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
+                        onRowClick={setDetailsUser}
                         emptyState={{
                             icon: Users,
-                            title: 'No users found',
-                            description:
+                            title: t('No users found'),
+                            description: t(
                                 'Try adjusting your search or filters, or invite a new user.',
+                            ),
                             action: emptyAction,
                         }}
                     />
 
                     <DataTablePagination
                         meta={users.meta}
+                        disabled={isLoading}
                         onPageChange={(page) => apply({ page }, true)}
                     />
                 </div>
             </div>
+
+            <UserDetailsSheet
+                user={detailsUser}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDetailsUser(null);
+                    }
+                }}
+                onEdit={(user) => {
+                    setDetailsUser(null);
+                    openEdit(user);
+                }}
+            />
 
             <ConfirmDialog
                 open={pendingDelete !== null}
@@ -342,13 +385,16 @@ export default function UsersIndex({
                         setPendingDelete(null);
                     }
                 }}
-                title="Delete user?"
+                title={t('Delete user?')}
                 description={
                     pendingDelete
-                        ? `${pendingDelete.name} will be permanently deleted. This cannot be undone.`
+                        ? t(
+                              ':name will be permanently deleted. This cannot be undone.',
+                              { name: pendingDelete.name },
+                          )
                         : undefined
                 }
-                confirmLabel="Delete"
+                confirmLabel={t('Delete')}
                 destructive
                 onConfirm={confirmDelete}
             />

@@ -23,6 +23,7 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "maatwebsite/excel": "4.0",
+        "spatie/laravel-activitylog": "^5.1",
         "spatie/laravel-health": "^1.40",
         "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-permission": "8.3"
@@ -30,6 +31,8 @@
     "require-dev": {
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
+        "laravel-lang/lang": "^15.37",
+        "laravel-lang/publisher": "^16.8",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/pint": "^1.27",
@@ -111,7 +114,8 @@
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php artisan lang:update --ansi"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

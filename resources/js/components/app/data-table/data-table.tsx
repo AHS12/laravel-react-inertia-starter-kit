@@ -32,6 +32,7 @@ type Props<TData, TValue> = {
     isLoading?: boolean;
     sorting?: SortingState;
     onSortingChange?: (sorting: SortingState) => void;
+    onRowClick?: (row: TData) => void;
     emptyState?: DataTableEmptyState;
     className?: string;
 };
@@ -42,6 +43,7 @@ export function DataTable<TData, TValue>({
     isLoading = false,
     sorting = [],
     onSortingChange,
+    onRowClick,
     emptyState,
     className,
 }: Props<TData, TValue>) {
@@ -67,7 +69,15 @@ export function DataTable<TData, TValue>({
     const rows = table.getRowModel().rows;
 
     return (
-        <div className={cn('overflow-hidden rounded-xl border', className)}>
+        <div
+            className={cn(
+                'overflow-hidden rounded-xl border transition-opacity',
+                isLoading &&
+                    rows.length > 0 &&
+                    'pointer-events-none opacity-60',
+                className,
+            )}
+        >
             <Table>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -86,7 +96,7 @@ export function DataTable<TData, TValue>({
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {isLoading ? (
+                    {isLoading && rows.length === 0 ? (
                         columns.map((column, index) => (
                             <TableRow key={column.id ?? `skeleton-${index}`}>
                                 {columns.map((cell, cellIndex) => (
@@ -98,7 +108,18 @@ export function DataTable<TData, TValue>({
                         ))
                     ) : rows.length > 0 ? (
                         rows.map((row) => (
-                            <TableRow key={row.id}>
+                            <TableRow
+                                key={row.id}
+                                className={cn(
+                                    onRowClick &&
+                                        'cursor-pointer hover:bg-muted/50',
+                                )}
+                                onClick={
+                                    onRowClick
+                                        ? () => onRowClick(row.original)
+                                        : undefined
+                                }
+                            >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}>
                                         {flexRender(

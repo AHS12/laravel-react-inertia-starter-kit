@@ -2,9 +2,11 @@
 
 A **production-ready Laravel + Inertia/React starter kit**: authentication
 (Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
-media, an async export/import Data Processing Center, a first-run setup wizard,
-developer tools and a full quality gate — wired together with a strict
-Service–Repository architecture so product work can start on day one.
+media, an async export/import Data Processing Center, a full audit trail, a
+first-run setup wizard, developer tools and a full quality gate — wired
+together with a strict Service–Repository architecture so product work can
+start on day one. Ships with 5-language internationalization (English, Bangla,
+French, German, Spanish) out of the box.
 
 - Architecture & contributor conventions: [`AGENTS.md`](AGENTS.md)
 
@@ -20,9 +22,15 @@ Service–Repository architecture so product work can start on day one.
 - **Settings** — general, mail, appearance, per-user profile and security.
 - **Notifications** — in-app notification center with per-user preferences.
 - **Media & file uploads** via `spatie/laravel-medialibrary`.
+- **Audit trail** — automatic "who did what" logging (model changes, auth
+  events, RBAC, settings, domain events) browsable at `/audit-logs` with
+  cursor pagination, per-channel retention settings, manual pruning and
+  CSV/XLSX export.
 - **Async exports & imports** — a Data Processing Center tracking queued jobs
   with live progress, artifact download and pruning.
 - **Developer tooling** — Telescope, Pulse, Horizon and health checks.
+- **Internationalization** — 5 locales with a server-driven dictionary,
+  per-user language preference and `Intl` date/number formatting.
 - **First-run browser installer** — configure the database and runtime drivers
   without touching `.env` by hand.
 
@@ -175,11 +183,38 @@ php artisan queue:work --queue=critical,default,heavy   # run a queue worker exp
 php artisan schedule:work              # run the scheduler locally
 ```
 
-Scheduled work (`routes/console.php`): completed data-processing cleanup,
-health checks and Pulse metrics.
+Scheduled work (`routes/console.php`): audit log retention pruning, completed
+data-processing cleanup, health checks and Pulse metrics.
 
 **Horizon** monitors queues in production but requires `ext-pcntl`/`ext-posix`
 and therefore runs on **Linux only**. On Windows use `php artisan queue:work`.
+
+---
+
+## Internationalization
+
+The app ships with 5 locales: **English (`en`), Bangla (`bn`), French (`fr`),
+German (`de`) and Spanish (`es`)**, served through an in-house i18n layer.
+
+- **Switching language** — the globe icon in the header dropdown or
+  **Settings → General → Language** (same control, same behavior). Switching
+  persists the preference server-side and reloads the page so the dictionary,
+  `<html lang>` and `Intl` formatting all refresh.
+- **Resolution order** — the locale middleware applies the user's stored
+  preference → session locale (guests) → the global default setting
+  (Administration → Settings) → `en`.
+- **Dictionaries** — `lang/app/{locale}.json`, one file per locale. The active
+  dictionary is delivered to the frontend as a shared Inertia prop; missing
+  keys fall back to the English text.
+- **Adding strings** — wrap every user-visible string in `t('English source')`;
+  the English text renders before a translation exists. Add the new key to all
+  five dictionaries — `tests/Unit/TranslationParityTest.php` fails the build if
+  any locale is missing one.
+- **Dates & numbers** are formatted with the `Intl` APIs using the active
+  locale (`appLocale()` from `resources/js/lib/locale.ts`).
+
+See [`AGENTS.md`](AGENTS.md) §8.11 for the full translation-friendly code rules
+and the `add-translation` skill for extracting strings.
 
 ---
 
@@ -254,7 +289,7 @@ resources/js/
   pages/              Inertia pages
   components/         Feature UI + shadcn/ui primitives
   routes/ actions/    Wayfinder-generated helpers (do not edit)
-routes/               web, settings, exports, files, users, roles, admin, setup
+routes/               web, settings, exports, files, users, roles, audit, admin, setup
 tests/                Pest unit + feature tests
 ```
 

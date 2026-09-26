@@ -42,4 +42,4 @@ yarn-error.log
 /opencode.json
 /opencode.jsonc
 .commandcode
-
+.commandcode/taste

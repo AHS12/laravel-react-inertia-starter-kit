@@ -198,16 +198,39 @@ export function updateAppearance(
     return current;
 }
 
+const PERSIST_DEBOUNCE_MS = 500;
+
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
 function persistAppearance(preferences: AppearancePreferences): void {
-    router.patch(
-        updateAppearanceRoute.url(),
-        { ...preferences, silent: true },
-        {
-            preserveScroll: true,
-            preserveState: true,
-            only: [],
-        },
-    );
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+    }
+
+    persistTimer = setTimeout(() => {
+        persistTimer = null;
+
+        router.patch(
+            updateAppearanceRoute.url(),
+            { ...preferences, silent: true },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: [],
+            },
+        );
+    }, PERSIST_DEBOUNCE_MS);
+}
+
+/**
+ * Drop a scheduled appearance save. Used before visits that must not be
+ * cancelled by the debounced PATCH (e.g. the locale switch reload).
+ */
+export function cancelPendingAppearancePersist(): void {
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+        persistTimer = null;
+    }
 }
 
 export type UseAppearanceReturn = {

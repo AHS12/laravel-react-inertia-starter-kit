@@ -9,9 +9,10 @@ behavior, this document wins.
 
 A **production-ready Laravel + Inertia/React starter kit**: authentication
 (Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
-media, an async export/import Data Processing Center, a first-run setup wizard,
-developer tools and a full quality gate — wired together with a strict
-Service–Repository architecture so product work can start on day one.
+media, an async export/import Data Processing Center, a full audit trail, a
+first-run setup wizard, developer tools and a full quality gate — wired
+together with a strict Service–Repository architecture so product work can
+start on day one.
 
 ## 2. Stack
 
@@ -360,6 +361,39 @@ User::where(function ($q) {
   Telescope is dev-only; Pulse/Horizon are gated by the `viewPulse`/
   `viewHorizon` abilities in `AuthServiceProvider`/`HorizonServiceProvider`.
 
+### 7.16 Audit logging
+
+- The audit trail is collected with **`spatie/laravel-activitylog` v5** and
+  browsed at `/audit-logs` (`audit-logs.*` routes, `AuditLogController`).
+- **Audit events, not churn.** Model changes are collected automatically via
+  the `LogsActivity` trait with a selective `logOnly([...])` allowlist,
+  `logOnlyDirty()` and `dontLogEmptyChanges()`. **Never** call `logAll()` /
+  `logFillable()`. High-frequency models get named events only (no trait).
+- Named domain events (role changes, suspensions, avatar changes, setting
+  updates, finished exports/imports, cancellation requests, …) are recorded
+  with **`AuditLogService::record()`** from services — never from controllers
+  or jobs. In queued jobs, pass the actor explicitly; `auth()` is empty there.
+  `ProcessExport`/`ProcessImport` wrap their run in
+  `CauserResolver::withCauser($owner)` so model events fired during imports
+  attribute to the job owner.
+- Channels are `App\Enums\AuditLogName` (`auth`, `security`, `rbac`,
+  `settings`, `domain`), events `App\Enums\AuditEvent`.
+- **Retention is configurable per channel** through Administration → Settings
+  → Audit log (`SettingKey::AUDIT_RETENTION_*`, options 6 months – 10 years).
+  `AuditLogName::retentionDays()` resolves stored setting → default →
+  `config/audit.php` fallback (the single choke point used by the scheduled
+  `audit:clean` command and the manual prune gated by `audit.manage`).
+- **Export** rides the Data Processing Center: `DataEntity::AUDIT_LOGS` +
+  `AuditLogExport`, gated by `audit.export` (or global `export.create`); the
+  audit page passes its current filters into the export job.
+- Secrets never reach the log: `config/audit.php` `redacted_attributes` is
+  enforced centrally by `App\ActivityLog\AuditLogAction` (with
+  `default_except_attributes` in `config/activitylog.php` as the pre-diff
+  filter).
+- Every row written during one request/job shares a `correlation_id`
+  (`App\ActivityLog\AuditContext`, booted by `AuditRequestContext`).
+- Extend coverage with the **`add-audit-logging`** skill.
+
 ## 8. Frontend conventions
 
 ### 8.1 Directory structure
@@ -454,6 +488,48 @@ User::where(function ($q) {
   with React Testing Library, and wire it into `composer check`. Until then,
   verify behavior through Inertia feature tests and manual review.
 
+### 8.11 Translation-friendly code
+
+The app ships with 5 languages (`en`, `bn`, `fr`, `de`, `es`) via an in-house
+i18n layer. **Every user-visible string must be translatable.** Rules:
+
+- **English source string = translation key.** Wrap every user-visible string
+  in `t()` from `useTranslation()`: `t('Save changes')`. The English text
+  renders before a translation exists; never use string concatenation or
+  template interpolation for UI text — use Laravel-style `:param`
+  interpolation: `t('Delete :name?', { name })`.
+- **Strings inside module-scope helpers** (formatters, utils) cannot call
+  hooks — accept a `t: Translate` parameter (see
+  `components/data-processing/job-utils.ts`) and pass `t` from the calling
+  component.
+- **Zod schema messages stay English keys.** `useZodForm` translates client
+  errors automatically; don't pass `t` manually.
+- **Backend labels** (`Enums\*::label()`, `description()`, `options()`) must
+  be wrapped in `__()`; the frontend renders them through `t()` again
+  (`SettingField`, `SettingsForm`, dashboard stats).
+- **Static `Page.layout` breadcrumb titles** don't need wrapping — the
+  `Breadcrumbs` component translates them at render. Auth layout
+  `title`/`description` are translated the same way.
+- **Dictionaries live in `lang/app/{locale}.json`** — one file per locale,
+  kept in sync by `tests/Unit/TranslationParityTest.php` (add every new key
+  to **all five** files). They are separate from the `lang:update`
+  publisher files and are excluded from Pint.
+- **Bangla (`bn`) transliteration rule:** widely-understood tech terms are
+  phonetically transliterated, not translated — রোলস, এক্সপোর্ট, ইমপোর্ট,
+  স্ট্যাটাস, ফাইল, ডাউনলোড, ড্যাশবোর্ড, টাইমজোন. Translate the rest
+  naturally.
+- **Locale switching does a full page reload** (`POST /locale` →
+  `window.location.reload()`). `appLocale()` reads `<html lang>`, which is
+  only set on a full load — never switch locale with a soft Inertia visit.
+- **One shared language switcher.** The header toggle and the Settings →
+  General language field both render `components/app/language-select` and POST
+  `/locale` — keep them in sync rather than adding new switchers. The settings
+  form does not manage `app_locale` (its validation rule is `sometimes`), so
+  the switcher is never part of the form payload.
+- **Dates/numbers** use `appLocale()` from `lib/locale.ts` with the `Intl`
+  APIs; the locale middleware resolves user preference → session → global
+  setting → `en`.
+
 ## 9. Generated files — do not edit
 
 - `resources/js/actions/**`, `resources/js/routes/**`, `resources/js/wayfinder/**`
@@ -470,7 +546,9 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
    service → request/resource → controller → routes → tests.
 3. Implement backend first (service–repository), then the Inertia page/UI.
 4. Add tests (unit + feature) alongside the code.
-5. Run `composer check` and fix everything before finishing.
+5. Declare audit coverage for anything security- or business-relevant (skill:
+   `add-audit-logging`).
+6. Run `composer check` and fix everything before finishing.
 
 ## 11. Rules & skills index
 
@@ -482,3 +560,5 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
   - `.agents/skills/create-inertia-feature` — build a typed React/Inertia feature
   - `.agents/skills/add-permission` — declare, sync and enforce a permission
   - `.agents/skills/add-export` — register a new async export entity
+  - `.agents/skills/add-audit-logging` — add audit trail coverage for a model/module
+  - `.agents/skills/add-translation` — extract strings into the 5-locale app dictionaries

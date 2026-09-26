@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import {
     Bell,
+    History,
     Mail,
     Palette,
     ServerCog,
@@ -12,8 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCan } from '@/hooks/use-can';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { edit as appearanceEdit } from '@/routes/admin/settings/appearance';
+import { edit as auditEdit } from '@/routes/admin/settings/audit';
 import { edit as developerEdit } from '@/routes/admin/settings/developer';
 import { edit as generalEdit } from '@/routes/admin/settings/general';
 import { edit as mailEdit } from '@/routes/admin/settings/mail';
@@ -23,6 +26,7 @@ import type { NavItem } from '@/types';
 export default function AdminLayout({ children }: PropsWithChildren) {
     const can = useCan();
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { t } = useTranslation();
 
     const items: NavItem[] = [
         {
@@ -39,6 +43,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             title: 'Notifications',
             href: notificationsEdit(),
             icon: Bell,
+        },
+        {
+            title: 'Audit log',
+            href: auditEdit(),
+            icon: History,
         },
         {
             title: 'Appearance',
@@ -58,8 +67,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     return (
         <div className="px-4 py-6">
             <PageHeader
-                title="Settings"
-                description="Configure your workspace, email and developer tools."
+                title={t('Settings')}
+                description={t(
+                    'Configure your workspace, email and developer tools.',
+                )}
             />
 
             <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:gap-12">
@@ -82,7 +93,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                                     {item.icon && (
                                         <item.icon className="size-4" />
                                     )}
-                                    {item.title}
+                                    {t(item.title)}
                                 </Link>
                             </Button>
                         ))}
