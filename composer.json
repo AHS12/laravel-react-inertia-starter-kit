@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "ahs12/laravel-react-inertia-starter-kit",
     "type": "project",
     "description": "A production-ready Laravel + Inertia/React starter kit with auth, RBAC, settings, notifications, media, async exports/imports, a setup wizard and developer tools.",
     "keywords": [

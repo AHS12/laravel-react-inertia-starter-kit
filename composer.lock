@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1449a73ccdba5a47bf8fff838b90ab5d",
+    "content-hash": "34a37085c2c03f062ec6b800f5f92e96",
     "packages": [
         {
             "name": "ahs12/laravel-setanjo",
