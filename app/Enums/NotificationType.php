@@ -19,6 +19,8 @@ enum NotificationType: string
     case REPORT_COMPLETED = 'report.completed';
     case REPORT_FAILED = 'report.failed';
     case JOB_CANCELLED = 'job.cancelled';
+    case BACKUP_FAILED = 'backup.failed';
+    case BACKUP_UNHEALTHY = 'backup.unhealthy';
 
     public function label(): string
     {
@@ -32,6 +34,8 @@ enum NotificationType: string
             self::REPORT_COMPLETED => 'Report completed',
             self::REPORT_FAILED => 'Report failed',
             self::JOB_CANCELLED => 'Job cancelled',
+            self::BACKUP_FAILED => 'Backup failed',
+            self::BACKUP_UNHEALTHY => 'Backup unhealthy',
         };
     }
 
@@ -41,8 +45,8 @@ enum NotificationType: string
             self::SYSTEM_ANNOUNCEMENT => NotificationPriority::INFO,
             self::USER_INVITED => NotificationPriority::SUCCESS,
             self::EXPORT_COMPLETED, self::IMPORT_COMPLETED, self::REPORT_COMPLETED => NotificationPriority::SUCCESS,
-            self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED => NotificationPriority::CRITICAL,
-            self::JOB_CANCELLED => NotificationPriority::WARNING,
+            self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED, self::BACKUP_FAILED => NotificationPriority::CRITICAL,
+            self::JOB_CANCELLED, self::BACKUP_UNHEALTHY => NotificationPriority::WARNING,
         };
     }
 
@@ -61,6 +65,8 @@ enum NotificationType: string
             self::REPORT_COMPLETED => 'file-text',
             self::REPORT_FAILED => 'file-x',
             self::JOB_CANCELLED => 'ban',
+            self::BACKUP_FAILED => 'archive-x',
+            self::BACKUP_UNHEALTHY => 'shield-alert',
         };
     }
 

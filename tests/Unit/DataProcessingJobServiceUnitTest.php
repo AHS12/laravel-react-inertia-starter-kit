@@ -16,7 +16,6 @@ use App\Services\Notification\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
