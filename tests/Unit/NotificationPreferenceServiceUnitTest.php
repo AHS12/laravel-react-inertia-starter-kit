@@ -6,7 +6,6 @@ use App\Enums\UserSettingKey;
 use App\Services\Audit\AuditLogService;
 use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

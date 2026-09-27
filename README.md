@@ -7,11 +7,11 @@
 
 A **production-ready Laravel + Inertia/React starter kit**: authentication
 (Fortify, 2FA, passkeys), RBAC, user/role management, settings, notifications,
-media, an async export/import Data Processing Center, a full audit trail, a
-first-run setup wizard and developer tools — wired together with a strict
-Service–Repository architecture so product work can start on day one. Ships
-with 5-language internationalization (English, Bangla, French, German,
-Spanish).
+media, an async export/import Data Processing Center, a full audit trail,
+scheduled backups with optional S3/R2 off-site storage, a first-run setup
+wizard and developer tools — wired together with a strict Service–Repository
+architecture so product work can start on day one. Ships with 5-language
+internationalization (English, Bangla, French, German, Spanish).
 
 <!-- 📸 Screenshots: drop the two images into docs/images/ as
      screenshot-1.png and screenshot-2.png (or update the paths below). -->
@@ -36,6 +36,9 @@ Spanish).
   retention settings and export
 - **Async exports & imports** — a Data Processing Center (`/activity`)
   tracking queued jobs with live progress and artifact download
+- **Scheduled backups** — `spatie/laravel-backup` with a settings-driven
+  schedule, run history, health checks and an optional S3/R2 off-site
+  destination ([docs/backups.md](docs/backups.md))
 - **Developer tooling** — Telescope, Pulse, Horizon and health checks
 - **First-run browser installer** at `/setup` — configure everything without
   touching `.env` by hand
@@ -89,6 +92,7 @@ Full guides live in [`docs/`](docs/README.md):
 | [Getting started](docs/getting-started.md)        | Install, boot, first login               |
 | [Installation](docs/installation.md)              | Setup details + local env tools          |
 | [Configuration](docs/configuration.md)            | `.env`, drivers & Redis, mail, queues    |
+| [Backups](docs/backups.md)                        | Scheduled backups, S3/R2 destinations, restore runbook |
 | [Architecture](docs/architecture.md)              | Service–Repository, project structure    |
 | [Testing](docs/testing.md)                        | Pest, the quality gate, git hooks        |
 | [Translations](docs/translations.md)              | The 5-locale i18n layer                  |

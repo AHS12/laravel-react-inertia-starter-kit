@@ -394,6 +394,45 @@ User::where(function ($q) {
   (`App\ActivityLog\AuditContext`, booted by `AuditRequestContext`).
 - Extend coverage with the **`add-audit-logging`** skill.
 
+### 7.17 Backups & remote storage
+
+- Backups are powered by **`spatie/laravel-backup`** (plus
+  `league/flysystem-aws-s3-v3`). The schedule, destination disks and retention
+  windows live in **DB settings** (`App\Enums\SettingKey`, group `backup`) and
+  are consumed by `App\Services\Backup\BackupScheduleService` — never schedule
+  the spatie commands directly; the DB-driven
+  `backup:schedule-tick` (every 5 min in `routes/console.php`) evaluates the
+  settings and dispatches `App\Jobs\Backup\RunBackup` on the `heavy` channel.
+  Backups always land on the local `backups` disk
+  (`BackupScheduleService::LOCAL_DISK`); `backup_send_to_remote` adds the S3/R2
+  disk as a mirror destination when remote storage is configured.
+- The spatie commands get the settings through their **`--config=`** option
+  (`BackupScheduleService::runtimeConfig()`): they are constructed at console
+  boot with a container-scoped `Config`, so runtime `config()` overrides never
+  reach them. The health check runs through the package's monitor API directly
+  (`BackupService::runMonitor()`).
+- Run state is tracked in `App\Models\BackupRun` (type backup/cleanup/monitor,
+  status, trigger scheduled/manual, archive details). Package events are
+  correlated to the current row via the in-process `BackupRunContext` —
+  spatie events fire inside the same process as the `Artisan::call`. Every run
+  reaches a terminal state (the job's `failed()` handler marks failures).
+- **Remote object storage (S3 / R2)** credentials are written to **`.env`**
+  via `App\Services\Storage\StorageConfigurator` (mirrors the setup wizard's
+  `EnvironmentWriter` flow: write → `config:clear` → `queue:restart` → runtime
+  reload). Secrets are never echoed back or audited with values; only the
+  `STORAGE_UPDATED` audit event (keys changed, no values) is recorded.
+- Permissions: `backup.view` (page + download) and `backup.manage` (run now +
+  backup settings), declared in the permission registry and enforced via
+  `BackupRunPolicy` and route `can:` middleware.
+- Failure notifications go to users with `backup.manage` through
+  `NotificationService` (`backup.failed` / `backup.unhealthy` types) — never
+  through spatie's own notification channels (they are disabled in
+  `config/backup.php`). With `backup_email_enabled`, successful backups are
+  emailed (queued `BackupCompletedMail`, archive attached below
+  `backup.email_max_attachment_mb`) to the same audience — mail strings belong
+  in the root `lang/{locale}.json` files.
+- Guide + restore runbook: `docs/backups.md`.
+
 ## 8. Frontend conventions
 
 ### 8.1 Directory structure

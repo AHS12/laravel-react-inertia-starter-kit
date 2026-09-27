@@ -10,6 +10,7 @@ a production-ready Laravel + Inertia/React starter kit.
 | [Getting started](getting-started.md)         | Install, boot the app, first login — the fastest path to running   |
 | [Installation](installation.md)               | Full setup details and local environment tools (Herd, Laragon, Lerd, EnvKit) |
 | [Configuration](configuration.md)             | `.env` variables, database, drivers & Redis, mail                  |
+| [Backups](backups.md)                         | Scheduled backups, remote S3/R2 destinations, retention, restore   |
 | [Architecture](architecture.md)               | Service–Repository pattern, project structure, backend/frontend conventions |
 | [Testing](testing.md)                         | Pest setup, the quality gate, git hooks                           |
 | [Translations](translations.md)               | The 5-locale i18n layer and how to add strings                    |
@@ -23,6 +24,8 @@ a production-ready Laravel + Inertia/React starter kit.
 - **`/activity`** — the Data Processing Center: live progress for queued
   exports and imports, with downloadable artifacts.
 - **`/audit-logs`** — the audit trail: who did what, when.
+- **Settings → Backups** — scheduled backups with a run history, health checks
+  and an optional S3/R2 off-site destination (see [backups.md](backups.md)).
 - **`/developer`** — developer tools (Telescope, Pulse, Horizon, health
   checks), gated by permission.
 

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Listeners\Audit\AuthAuditSubscriber;
+use App\Listeners\Backup\RecordBackupFailure;
+use App\Listeners\Backup\RecordBackupSuccess;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Backup\Events\BackupHasFailed;
+use Spatie\Backup\Events\BackupWasSuccessful;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureDevCommands();
         $this->configureAudit();
+        $this->configureBackup();
         $this->configureTranslations();
     }
 
@@ -39,6 +44,16 @@ class AppServiceProvider extends ServiceProvider
     protected function configureAudit(): void
     {
         Event::subscribe(AuthAuditSubscriber::class);
+    }
+
+    /**
+     * Track the spatie backup events so each run is recorded on the run
+     * history and failures reach the in-house notification system.
+     */
+    protected function configureBackup(): void
+    {
+        Event::listen(BackupWasSuccessful::class, RecordBackupSuccess::class);
+        Event::listen(BackupHasFailed::class, RecordBackupFailure::class);
     }
 
     /**
