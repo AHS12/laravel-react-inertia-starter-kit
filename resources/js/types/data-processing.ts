@@ -18,12 +18,95 @@ export type JobProgress = {
     processed: number | null;
     percentage: number;
     indeterminate: boolean;
+    elapsed_seconds: number;
+    eta_seconds: number | null;
+    throughput_per_min: number | null;
 };
 
 export type JobCounts = {
     created: number | null;
+    updated: number;
     failed: number | null;
+    skipped: number;
 };
+
+export type JobStage = {
+    key: string;
+    label: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+    started_at: string | null;
+    ended_at: string | null;
+    duration_ms: number | null;
+    processed: number | null;
+    total: number | null;
+};
+
+export type JobAttempts = {
+    current: number;
+    label: string;
+    next_retry_at: string | null;
+};
+
+export type JobFailure = {
+    reason: string;
+    label: string;
+    hint: string;
+    action: string | null;
+    message: string | null;
+};
+
+export type JobTiming = {
+    dispatched_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    duration_ms: number | null;
+    last_heartbeat_at: string | null;
+    stale: boolean;
+};
+
+export type JobTimelineEvent = {
+    id: number;
+    sequence: number;
+    type: string;
+    type_label: string;
+    level: string;
+    stage: string | null;
+    message: string | null;
+    /** A truncated JSON string is sent when the payload is oversized. */
+    context: Record<string, unknown> | unknown[] | string | null;
+    context_truncated: boolean;
+    progress: Record<string, unknown> | null;
+    attempt: number;
+    duration_ms: number | null;
+    occurred_at: string | null;
+};
+
+export type IssueGroupSample = {
+    row: number;
+    message: string;
+};
+
+export type IssueGroup = {
+    type: string;
+    message: string;
+    count: number;
+    sample_rows: IssueGroupSample[];
+    first_seen: string | null;
+    last_seen: string | null;
+};
+
+export type JobAdvanced = {
+    correlation_id: string | null;
+    raw: Record<string, unknown>;
+};
+
+export type EventsMeta = {
+    oldest_sequence: number | null;
+    latest_sequence: number | null;
+    has_more_older: boolean;
+};
+
+export type RunEventFilter = 'all' | 'stages' | 'issues';
 
 export type JobArtifact = {
     key: string;
@@ -33,6 +116,7 @@ export type JobArtifact = {
     mime_type: string | null;
     downloadable: boolean;
     expires_at: string | null;
+    download_url?: string | null;
 };
 
 export type JobAbilities = {
@@ -47,11 +131,17 @@ export type DataProcessingJob = {
     id: number;
     job_id: string;
     name: string;
+    run_type: string;
     type: JobType;
     type_label: string;
     type_icon: string;
     status: JobStatus;
     status_label: string;
+    entity: {
+        value: string | null;
+        label: string | null;
+        icon: string | null;
+    };
     entity_type: string | null;
     entity_label: string | null;
     entity_icon: string | null;
@@ -61,6 +151,14 @@ export type DataProcessingJob = {
     stage: string | null;
     progress: JobProgress;
     counts: JobCounts;
+    stages: JobStage[];
+    attempts: JobAttempts;
+    failure: JobFailure | null;
+    timing: JobTiming;
+    abilities: JobAbilities & { resume: boolean };
+    timeline: JobTimelineEvent[];
+    issues: IssueGroup[];
+    advanced: JobAdvanced | null;
     file_name: string | null;
     file_size: number | null;
     input_file_name: string | null;

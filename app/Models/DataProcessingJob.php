@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Contracts\PipelineRunnable;
 use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\DataProcessingJobType;
 use App\Enums\ExportFormat;
+use App\Enums\PipelineFailureReason;
+use App\Enums\PipelineRunType;
 use Database\Factories\DataProcessingJobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,7 +43,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $error_count
  * @property array<int, mixed>|null $errors
  * @property string|null $error_message
+ * @property PipelineFailureReason|null $failure_reason
+ * @property int $attempt
  * @property Carbon|null $started_at
+ * @property Carbon|null $last_heartbeat_at
+ * @property Carbon|null $next_retry_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancel_requested_at
  * @property int|null $user_id
@@ -55,9 +62,10 @@ use Illuminate\Support\Carbon;
     'input_disk', 'input_path', 'input_size', 'input_mime_type',
     'file_name', 'file_disk', 'file_path', 'original_file_name', 'file_size', 'mime_type',
     'total_items', 'processed_items', 'success_count', 'error_count', 'errors', 'error_message',
+    'failure_reason', 'attempt', 'last_heartbeat_at', 'next_retry_at',
     'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'created_by', 'updated_by',
 ])]
-class DataProcessingJob extends Model
+class DataProcessingJob extends Model implements PipelineRunnable
 {
     /** @use HasFactory<DataProcessingJobFactory> */
     use HasFactory;
@@ -76,13 +84,17 @@ class DataProcessingJob extends Model
             'format' => ExportFormat::class,
             'filters' => 'array',
             'errors' => 'array',
+            'failure_reason' => PipelineFailureReason::class,
             'file_size' => 'integer',
             'input_size' => 'integer',
             'total_items' => 'integer',
             'processed_items' => 'integer',
             'success_count' => 'integer',
             'error_count' => 'integer',
+            'attempt' => 'integer',
             'started_at' => 'datetime',
+            'last_heartbeat_at' => 'datetime',
+            'next_retry_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancel_requested_at' => 'datetime',
         ];
@@ -195,6 +207,21 @@ class DataProcessingJob extends Model
         return $query->where('type', DataProcessingJobType::REPORT);
     }
 
+    /**
+     * Resolve a route binding by primary key (`/activity/7`) or by the job's
+     * `job_id` UUID (`/activity/321b256a-…`), so either identifier works.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        return $this->newQuery()
+            ->when(
+                is_numeric($value),
+                fn (Builder $query): Builder => $query->where('id', (int) $value),
+                fn (Builder $query): Builder => $query->where('job_id', (string) $value),
+            )
+            ->first();
+    }
+
     public function isImport(): bool
     {
         return $this->type === DataProcessingJobType::IMPORT;
@@ -254,6 +281,48 @@ class DataProcessingJob extends Model
     }
 
     /**
+     * Whether the run is processing but has not emitted a heartbeat recently.
+     */
+    public function isStale(): bool
+    {
+        if ($this->status !== DataProcessingJobStatus::PROCESSING) {
+            return false;
+        }
+
+        $reference = $this->last_heartbeat_at ?? $this->started_at;
+
+        if ($reference === null) {
+            return false;
+        }
+
+        $threshold = max(0, (int) config('pipeline.stale_after', 1920));
+
+        return $reference->lt(now()->subSeconds($threshold));
+    }
+
+    /**
+     * Seconds since the last heartbeat (or start), or null when never started.
+     */
+    public function heartbeatAge(): ?int
+    {
+        $reference = $this->last_heartbeat_at ?? $this->started_at;
+
+        if ($reference === null) {
+            return null;
+        }
+
+        return max(0, (int) $reference->diffInSeconds(now()));
+    }
+
+    /**
+     * A human label for the current attempt, e.g. "Attempt 2".
+     */
+    public function attemptsLabel(): string
+    {
+        return __('Attempt :number', ['number' => max(1, $this->attempt)]);
+    }
+
+    /**
      * Whether the job has a downloadable artifact.
      */
     public function isDownloadable(): bool
@@ -273,6 +342,8 @@ class DataProcessingJob extends Model
         }
 
         $cleanupDays = (int) config('exports.cleanup_days', 7);
+        $expiresAt = $this->completed_at?->copy()->addDays($cleanupDays);
+        $expired = $expiresAt !== null && $expiresAt->isPast();
 
         return [[
             'key' => 'primary',
@@ -280,8 +351,8 @@ class DataProcessingJob extends Model
             'file_name' => $this->file_name,
             'size' => $this->file_size,
             'mime_type' => $this->mime_type,
-            'downloadable' => $this->isDownloadable(),
-            'expires_at' => $this->completed_at?->copy()->addDays($cleanupDays)->toIso8601String(),
+            'downloadable' => $this->isDownloadable() && ! $expired,
+            'expires_at' => $expiresAt?->toIso8601String(),
         ]];
     }
 
@@ -327,5 +398,21 @@ class DataProcessingJob extends Model
         $remainingMinutes = $minutes % 60;
 
         return $remainingMinutes > 0 ? "{$hours}h {$remainingMinutes}m" : "{$hours}h";
+    }
+
+    /**
+     * The pipeline run kind this job writes events under.
+     */
+    public function pipelineRunType(): PipelineRunType
+    {
+        return PipelineRunType::DATA_PROCESSING;
+    }
+
+    /**
+     * The job's identifier within the pipeline event stream.
+     */
+    public function pipelineRunId(): string
+    {
+        return (string) $this->getKey();
     }
 }

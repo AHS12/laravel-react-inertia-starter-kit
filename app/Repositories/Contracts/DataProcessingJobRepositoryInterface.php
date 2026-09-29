@@ -5,8 +5,8 @@ namespace App\Repositories\Contracts;
 use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\Models\DataProcessingJob;
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -51,6 +51,21 @@ interface DataProcessingJobRepositoryInterface
      * user's jobs.
      */
     public function activeCount(?int $userId = null): int;
+
+    /**
+     * A cheap derived revision of the job rows: it changes when a job is
+     * created, deleted or updated, and is stable otherwise. A null user id
+     * covers every user's jobs (`data-processing.view.all`).
+     */
+    public function pipelineRevision(?int $userId = null): string;
+
+    /**
+     * The newest active (pending + processing) jobs for the "Active now"
+     * section. A null user id covers every user's jobs.
+     *
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function activeJobs(?int $userId = null, int $limit = 5): Collection;
 
     /**
      * Processing jobs that started before the cutoff (likely stalled).

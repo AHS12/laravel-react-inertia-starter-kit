@@ -35,7 +35,7 @@ export function SetupChecklist({ steps }: Props) {
                 <CardTitle>{t('Get started')}</CardTitle>
                 <CardDescription>
                     {t(
-                        'Finish setting up your application to get the most out of it.',
+                        'Finish setting up the application to unlock analytics.',
                     )}
                 </CardDescription>
             </CardHeader>

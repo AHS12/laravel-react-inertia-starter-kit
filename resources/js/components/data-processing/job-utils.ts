@@ -1,69 +1,17 @@
-import type { DataProcessingJob, JobStatus } from '@/types';
+import {
+    formatBytes,
+    formatNumber,
+    formatRelativeTime as relativeTime,
+} from '@/lib/format';
 import { appLocale } from '@/lib/locale';
+import type { DataProcessingJob, JobStatus } from '@/types';
 
 export type Translate = (
     key: string,
     replacements?: Record<string, string | number>,
 ) => string;
 
-export function formatNumber(value: number | null | undefined): string {
-    if (value === null || value === undefined) {
-        return '—';
-    }
-
-    return new Intl.NumberFormat(appLocale()).format(value);
-}
-
-export function formatBytes(bytes: number | null | undefined): string {
-    if (!bytes) {
-        return '—';
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unit = 0;
-
-    while (size >= 1024 && unit < units.length - 1) {
-        size /= 1024;
-        unit += 1;
-    }
-
-    return `${size.toFixed(size >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
-}
-
-export function relativeTime(value: string | null | undefined): string {
-    if (!value) {
-        return '—';
-    }
-
-    const diff = new Date(value).getTime() - Date.now();
-    const abs = Math.abs(diff);
-    const formatter = new Intl.RelativeTimeFormat(appLocale(), {
-        numeric: 'auto',
-    });
-
-    if (abs < 60_000) {
-        return formatter.format(Math.round(diff / 1000), 'second');
-    }
-
-    if (abs < 3_600_000) {
-        return formatter.format(Math.round(diff / 60_000), 'minute');
-    }
-
-    if (abs < 86_400_000) {
-        return formatter.format(Math.round(diff / 3_600_000), 'hour');
-    }
-
-    if (abs < 604_800_000) {
-        return formatter.format(Math.round(diff / 86_400_000), 'day');
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
-}
+export { formatBytes, formatNumber, relativeTime };
 
 export function isActiveStatus(status: JobStatus): boolean {
     return status === 'pending' || status === 'processing';
@@ -105,7 +53,8 @@ export function resultSummary(job: DataProcessingJob, t: Translate): string {
 }
 
 /**
- * A rough time remaining estimate for a running job, when determinate.
+ * A time remaining estimate for a running job. Prefers the server-computed
+ * `eta_seconds` (PIPE-02) and falls back to a local estimate when it is absent.
  */
 export function computeEta(
     job: DataProcessingJob,
@@ -115,6 +64,23 @@ export function computeEta(
         return null;
     }
 
+    const remaining = job.progress.eta_seconds ?? estimateEtaSeconds(job);
+
+    if (remaining === null) {
+        return null;
+    }
+
+    if (remaining < 60) {
+        return t('~:count left', { count: `${Math.round(remaining)}s` });
+    }
+
+    return t('~:count left', { count: `${Math.round(remaining / 60)}m` });
+}
+
+/**
+ * Local fallback: seconds remaining extrapolated from the average rate so far.
+ */
+function estimateEtaSeconds(job: DataProcessingJob): number | null {
     const { processed, total } = job.progress;
 
     if (!processed || !total || processed <= 0 || !job.started_at) {
@@ -127,13 +93,7 @@ export function computeEta(
         return null;
     }
 
-    const remaining = Math.max(0, (elapsed / processed) * (total - processed));
-
-    if (remaining < 60) {
-        return t('~:count left', { count: `${Math.round(remaining)}s` });
-    }
-
-    return t('~:count left', { count: `${Math.round(remaining / 60)}m` });
+    return Math.max(0, (elapsed / processed) * (total - processed));
 }
 
 export type JobGroup = {

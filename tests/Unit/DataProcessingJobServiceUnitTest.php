@@ -7,15 +7,20 @@ use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
 use App\Enums\NotificationType;
+use App\Enums\PipelineFailureReason;
 use App\Jobs\ProcessExport;
 use App\Models\DataProcessingJob;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Services\Pipeline\FailureReasonResolver;
+use App\Services\Pipeline\PipelineEventRecorder;
+use App\Services\Pipeline\PipelineRunAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -25,7 +30,22 @@ beforeEach(function () {
     $this->notifications = Mockery::mock(NotificationService::class);
     $this->audit = Mockery::mock(AuditLogService::class);
     $this->audit->shouldReceive('record')->byDefault();
-    $this->service = new DataProcessingJobService($this->repository, $this->notifications, $this->audit);
+    $this->pipeline = Mockery::mock(PipelineEventRecorder::class);
+    $this->pipeline->shouldReceive(
+        'dispatched', 'started', 'progress', 'artifactReady',
+        'completed', 'failed', 'cancelled', 'retryScheduled',
+    )->byDefault();
+    $this->runs = Mockery::mock(PipelineRunAggregator::class);
+    $this->failures = Mockery::mock(FailureReasonResolver::class);
+    $this->failures->shouldReceive('fromMessage')->andReturn(PipelineFailureReason::UNKNOWN)->byDefault();
+    $this->service = new DataProcessingJobService(
+        $this->repository,
+        $this->notifications,
+        $this->audit,
+        $this->pipeline,
+        $this->runs,
+        $this->failures,
+    );
 });
 
 afterEach(function () {
@@ -189,4 +209,115 @@ test('statsFor delegates to the repository', function () {
         ->andReturn(['total' => 0]);
 
     expect($this->service->statsFor(5, true))->toBe(['total' => 0]);
+});
+
+test('createExport records a dispatched pipeline event', function () {
+    Queue::fake();
+
+    $this->repository->shouldReceive('create')->once()->andReturn(new DataProcessingJob([
+        'job_id' => 'job-9',
+        'type' => 'export',
+        'status' => 'pending',
+        'entity_type' => 'users',
+    ]));
+
+    $this->pipeline->shouldReceive('dispatched')->once();
+
+    $this->service->createExport(new DataProcessingJobDTO(entityType: DataEntity::USERS, format: ExportFormat::XLSX));
+});
+
+test('markProcessing records started only on the first transition', function () {
+    $pending = DataProcessingJob::factory()->active()->create([
+        'status' => DataProcessingJobStatus::PENDING,
+        'started_at' => null,
+    ]);
+
+    $this->repository->shouldReceive('update')->once()->andReturn($pending);
+    $this->pipeline->shouldReceive('started')->once();
+
+    $this->service->markProcessing($pending, 10, 'Generating file');
+
+    $processing = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($processing);
+
+    $this->service->markProcessing($processing, 10, 'Generating file');
+});
+
+test('markProgress records a progress event with the total', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+
+    $this->pipeline->shouldReceive('progress')
+        ->once()
+        ->with(Mockery::on(fn (DataProcessingJob $model): bool => $model->is($job)), 70, 100, 'Importing rows');
+
+    $this->service->markProgress($job, 70, 'Importing rows');
+});
+
+test('attachArtifact records an artifact ready event', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('artifactReady')->once();
+
+    $this->service->attachArtifact($job, 'users.xlsx', 'exports/users.xlsx', 'local', 10, 'text/csv');
+});
+
+test('markCompleted records a terminal completed event', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('completed')->once();
+
+    $this->service->markCompleted($job, 100, 100);
+});
+
+test('a terminal job does not record a second terminal event', function () {
+    $job = DataProcessingJob::factory()->completed()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('completed')->never();
+
+    $this->service->markCompleted($job, 1, 1);
+});
+
+test('retry records a retry scheduled event', function () {
+    Queue::fake();
+
+    $job = DataProcessingJob::factory()->failed()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('retryScheduled')->once();
+
+    $this->service->retry($job);
+});
+
+test('markProcessing increments the attempt and refreshes the heartbeat', function () {
+    $job = DataProcessingJob::factory()->active()->create([
+        'status' => DataProcessingJobStatus::PENDING,
+        'attempt' => 1,
+    ]);
+
+    $this->repository->shouldReceive('update')
+        ->once()
+        ->withArgs(fn (DataProcessingJob $model, array $data): bool => $data['attempt'] === 2
+            && array_key_exists('last_heartbeat_at', $data)
+            && $data['next_retry_at'] === null)
+        ->andReturn($job);
+
+    $this->service->markProcessing($job, 10, 'Reading file');
+});
+
+test('markFailed stores a classified failure reason', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')
+        ->once()
+        ->withArgs(fn (DataProcessingJob $model, array $data): bool => $data['status'] === DataProcessingJobStatus::FAILED
+            && $data['failure_reason'] === PipelineFailureReason::RATE_LIMITED->value)
+        ->andReturn($job);
+
+    $this->service->markFailed($job, 'Too many requests', PipelineFailureReason::RATE_LIMITED);
 });

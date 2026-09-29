@@ -4,11 +4,12 @@ import {
     useReactTable,
     type ColumnDef,
     type SortingState,
+    type VisibilityState,
 } from '@tanstack/react-table';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeleton } from '@/components/feedback/skeleton-table';
 import {
     Table,
     TableBody,
@@ -17,6 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import type { TableDensity } from '@/lib/table-preferences';
 import { cn } from '@/lib/utils';
 
 export type DataTableEmptyState = {
@@ -34,6 +36,10 @@ type Props<TData, TValue> = {
     onSortingChange?: (sorting: SortingState) => void;
     onRowClick?: (row: TData) => void;
     emptyState?: DataTableEmptyState;
+    density?: TableDensity;
+    columnVisibility?: VisibilityState;
+    onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+    stickyHeader?: boolean;
     className?: string;
 };
 
@@ -45,17 +51,30 @@ export function DataTable<TData, TValue>({
     onSortingChange,
     onRowClick,
     emptyState,
+    density = 'comfortable',
+    columnVisibility,
+    onColumnVisibilityChange,
+    stickyHeader = false,
     className,
 }: Props<TData, TValue>) {
     const table = useReactTable({
         data,
         columns,
-        state: { sorting },
+        state: { sorting, columnVisibility },
         onSortingChange: onSortingChange
             ? (updater) => {
                   onSortingChange(
                       typeof updater === 'function'
                           ? updater(sorting)
+                          : updater,
+                  );
+              }
+            : undefined,
+        onColumnVisibilityChange: onColumnVisibilityChange
+            ? (updater) => {
+                  onColumnVisibilityChange(
+                      typeof updater === 'function'
+                          ? updater(columnVisibility ?? {})
                           : updater,
                   );
               }
@@ -70,16 +89,27 @@ export function DataTable<TData, TValue>({
 
     return (
         <div
+            aria-busy={isLoading}
             className={cn(
-                'overflow-hidden rounded-xl border transition-opacity',
-                isLoading &&
-                    rows.length > 0 &&
-                    'pointer-events-none opacity-60',
+                'rounded-xl border',
+                stickyHeader ? 'max-h-[70vh] overflow-auto' : 'overflow-hidden',
                 className,
             )}
         >
-            <Table>
-                <TableHeader>
+            <Table
+                className={cn(
+                    density === 'compact' &&
+                        '[&_td]:py-1.5 [&_th]:h-8 [&_th]:py-1.5',
+                    stickyHeader &&
+                        '[&_[data-slot=table-container]]:overflow-visible',
+                )}
+            >
+                <TableHeader
+                    className={cn(
+                        stickyHeader &&
+                            'sticky top-0 z-10 bg-background [&_tr]:border-b',
+                    )}
+                >
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => (
@@ -97,15 +127,7 @@ export function DataTable<TData, TValue>({
                 </TableHeader>
                 <TableBody>
                     {isLoading && rows.length === 0 ? (
-                        columns.map((column, index) => (
-                            <TableRow key={column.id ?? `skeleton-${index}`}>
-                                {columns.map((cell, cellIndex) => (
-                                    <TableCell key={cell.id ?? cellIndex}>
-                                        <Skeleton className="h-5 w-full" />
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        ))
+                        <TableSkeleton columns={columns.length} rows={5} />
                     ) : rows.length > 0 ? (
                         rows.map((row) => (
                             <TableRow

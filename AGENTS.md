@@ -68,6 +68,7 @@ Run **`composer check`** before considering any task complete. It runs:
 
 - `npm run check` — frontend format + lint (`vp check`)
 - `npm run types:check` — TypeScript compiler
+- `npm run test` — frontend unit/component tests (`vp test` / Vitest)
 - `composer test` — Pint, PHPStan/Larastan and Pest
 
 Auto-fix formatting and lint issues with `composer check:fix`.
@@ -83,6 +84,7 @@ Auto-fix formatting and lint issues with `composer check:fix`.
 | PHP gate only              | `composer test`             |
 | Frontend format + lint     | `npm run check`             |
 | TypeScript type check      | `npm run types:check`       |
+| Frontend tests             | `npm test`                  |
 | Build frontend assets      | `npm run build`             |
 | Security advisories        | `composer security`         |
 
@@ -446,6 +448,7 @@ User::where(function ($q) {
 | Hook           | `resources/js/hooks/use-*.ts(x)`  |
 | Utility        | `resources/js/lib/*.ts`           |
 | Types          | `resources/js/types/*.ts`         |
+| Frontend tests | `resources/js/**/*.test.ts(x)` + `resources/js/test/*` |
 | Generated      | `resources/js/{actions,routes,wayfinder}/**` (do not edit) |
 
 ### 8.2 TypeScript
@@ -502,6 +505,10 @@ User::where(function ($q) {
 - Always provide dark-mode styles (`dark:`); use semantic tokens
   (`text-muted-foreground`, `border-sidebar-border`).
 - Mobile-first; keep spacing consistent with existing pages.
+- **Motion & feedback** follow ui convention vocabulary: duration/easing tokens
+  (`duration-fast`, `ease-standard`, `transition-smooth`), the
+  `components/feedback/*` primitives, the `Button` `loading` prop and the
+  shared `@/lib/toast` helper. See [`docs/ui-conventions.md`](docs/ui-conventions.md).
 
 ### 8.7 Hooks & state
 
@@ -523,9 +530,21 @@ User::where(function ($q) {
 
 ### 8.10 Frontend testing
 
-- No JS test runner is configured yet. If you add one, use `vp test` (Vitest)
-  with React Testing Library, and wire it into `composer check`. Until then,
-  verify behavior through Inertia feature tests and manual review.
+- Run frontend tests with `npm test` (`vp test` / Vitest + React Testing Library
+  on jsdom), configured in `vitest.config.ts` with setup in
+  `resources/js/test/setup.ts`. It is part of `composer check`.
+- Tests are **co-located** with the code they cover as `*.test.ts` / `*.test.tsx`
+  under `resources/js`, so `tsc --noEmit` type-checks them. Import `describe`,
+  `it`, `expect` and `vi` from `vitest` explicitly (globals are off).
+- Render through the shared helper `@/test/render` (`render`, `renderWithUser`;
+  also re-exports `screen`, `within`, `userEvent`) so components get the common
+  provider tree.
+- Components that call `useTranslation` read Inertia page props; mock the hook
+  instead of faking a page:
+  `vi.mock('@/hooks/use-translation', async () => await import('@/test/support/translation-mock'))`.
+- Assert behaviour, not Tailwind classes. Recharts cannot measure its container
+  in jsdom, so assert the chart surface / loading / empty states rather than the
+  plotted SVG.
 
 ### 8.11 Translation-friendly code
 
