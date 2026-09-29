@@ -7,20 +7,27 @@ use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\DTOs\DataProcessingJob\JobRequest;
 use App\DTOs\Notification\NotificationDTO;
 use App\DTOs\Notification\NotificationTargetDTO;
+use App\DTOs\Pipeline\PipelineEventWindowDTO;
+use App\DTOs\Pipeline\PipelineRunDTO;
 use App\Enums\AuditEvent;
 use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
 use App\Enums\NotificationTargetType;
 use App\Enums\NotificationType;
+use App\Enums\PipelineFailureReason;
 use App\Exports\ImportReportExport;
 use App\Imports\ImportResult;
 use App\Jobs\DataProcessingJobDispatcher;
 use App\Models\DataProcessingJob;
+use App\Models\PipelineEvent;
 use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\Notification\NotificationService;
+use App\Services\Pipeline\FailureReasonResolver;
+use App\Services\Pipeline\PipelineEventRecorder;
+use App\Services\Pipeline\PipelineRunAggregator;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -37,6 +44,9 @@ class DataProcessingJobService
         protected DataProcessingJobRepositoryInterface $repository,
         protected NotificationService $notifications,
         protected AuditLogService $audit,
+        protected PipelineEventRecorder $pipeline,
+        protected PipelineRunAggregator $runs,
+        protected FailureReasonResolver $failures,
     ) {}
 
     /**
@@ -55,6 +65,58 @@ class DataProcessingJobService
     public function findByJobId(string $jobId): ?DataProcessingJob
     {
         return $this->repository->findByJobId($jobId);
+    }
+
+    /**
+     * Paginate jobs as aggregated pipeline run contracts.
+     *
+     * @return LengthAwarePaginator<int, PipelineRunDTO>
+     */
+    public function paginateRuns(DataProcessingJobFilterDTO $filters, bool $withTimeline = false): LengthAwarePaginator
+    {
+        return $this->repository
+            ->paginate($filters, $filters->perPage)
+            ->through(fn (DataProcessingJob $job): PipelineRunDTO => $this->runs->aggregate($job, $withTimeline));
+    }
+
+    /**
+     * The aggregated pipeline contract for a single run.
+     */
+    public function pipelineRun(DataProcessingJob $job, bool $withTimeline = true): PipelineRunDTO
+    {
+        return $this->runs->aggregate($job, $withTimeline);
+    }
+
+    /**
+     * A bounded window of a run's events for the timeline page (PIPE-05).
+     */
+    public function eventWindow(DataProcessingJob $job, ?int $after = null, ?int $before = null): PipelineEventWindowDTO
+    {
+        return $this->runs->eventWindow($job, $after, $before);
+    }
+
+    /**
+     * A paginated view of a run's events for the inspector's event table
+     * (PIPE-06).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, PipelineEvent>
+     */
+    public function paginateEvents(DataProcessingJob $job, int $perPage = 25, array $filters = []): LengthAwarePaginator
+    {
+        return $this->runs->paginateEvents($job, $perPage, $filters);
+    }
+
+    /**
+     * The newest active runs as aggregated contracts (the "Active now" section).
+     *
+     * @return Collection<int, PipelineRunDTO>
+     */
+    public function activeRunsFor(?int $userId, bool $viewAll, int $limit = 5): Collection
+    {
+        return $this->repository
+            ->activeJobs($viewAll ? null : $userId, $limit)
+            ->map(fn (DataProcessingJob $job): PipelineRunDTO => $this->runs->aggregate($job));
     }
 
     /**
@@ -96,6 +158,11 @@ class DataProcessingJobService
 
         $job = DB::transaction(fn (): DataProcessingJob => $this->repository->create($attributes));
 
+        $this->pipeline->dispatched($job, [
+            'type' => $job->type->value,
+            'entity_type' => $job->entity_type?->value,
+        ]);
+
         DataProcessingJobDispatcher::dispatch($job);
 
         return $job;
@@ -106,12 +173,17 @@ class DataProcessingJobService
      */
     public function markProcessing(DataProcessingJob $job, ?int $totalItems = null, ?string $stage = null): DataProcessingJob
     {
+        $firstStart = $job->status !== DataProcessingJobStatus::PROCESSING;
+
         $data = [
             'status' => DataProcessingJobStatus::PROCESSING,
             'stage' => $stage,
+            'attempt' => $job->attempt + 1,
+            'last_heartbeat_at' => now(),
+            'next_retry_at' => null,
         ];
 
-        if ($job->status !== DataProcessingJobStatus::PROCESSING) {
+        if ($firstStart) {
             $data['started_at'] = now();
         }
 
@@ -120,7 +192,13 @@ class DataProcessingJobService
             $data['processed_items'] = 0;
         }
 
-        return $this->repository->update($job, $data);
+        $job = $this->repository->update($job, $data);
+
+        if ($firstStart) {
+            $this->pipeline->started($job, $stage);
+        }
+
+        return $job;
     }
 
     /**
@@ -128,13 +206,33 @@ class DataProcessingJobService
      */
     public function markProgress(DataProcessingJob $job, int $processedItems, ?string $stage = null): DataProcessingJob
     {
-        $data = ['processed_items' => $processedItems];
+        $data = ['processed_items' => $processedItems, 'last_heartbeat_at' => now()];
 
         if ($stage !== null) {
             $data['stage'] = $stage;
         }
 
-        return $this->repository->update($job, $data);
+        $job = $this->repository->update($job, $data);
+
+        $this->pipeline->progress($job, $processedItems, $job->total_items, $stage);
+
+        return $job;
+    }
+
+    /**
+     * Refresh the run's liveness heartbeat (called on stage transitions).
+     */
+    public function touchHeartbeat(DataProcessingJob $job): DataProcessingJob
+    {
+        return $this->repository->update($job, ['last_heartbeat_at' => now()]);
+    }
+
+    /**
+     * Record when the next automatic retry is due.
+     */
+    public function scheduleRetry(DataProcessingJob $job, CarbonInterface $at): DataProcessingJob
+    {
+        return $this->repository->update($job, ['next_retry_at' => $at]);
     }
 
     /**
@@ -148,13 +246,22 @@ class DataProcessingJobService
         ?int $fileSize = null,
         ?string $mimeType = null,
     ): DataProcessingJob {
-        return $this->repository->update($job, [
+        $job = $this->repository->update($job, [
             'file_name' => $fileName,
             'file_path' => $filePath,
             'file_disk' => $fileDisk,
             'file_size' => $fileSize,
             'mime_type' => $mimeType,
+            'last_heartbeat_at' => now(),
         ]);
+
+        $this->pipeline->artifactReady($job, $fileName, [
+            'file_name' => $fileName,
+            'size' => $fileSize,
+            'mime_type' => $mimeType,
+        ]);
+
+        return $job;
     }
 
     /**
@@ -170,6 +277,8 @@ class DataProcessingJobService
         int $errorCount = 0,
         ?array $errors = null,
     ): DataProcessingJob {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::COMPLETED,
             'stage' => null,
@@ -179,7 +288,15 @@ class DataProcessingJobService
             'error_count' => $errorCount,
             'errors' => $errors,
             'completed_at' => now(),
+            'last_heartbeat_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->completed($job, progress: [
+                'total' => $totalItems,
+                'processed' => $processedItems,
+            ]);
+        }
 
         if (! $job->isReport()) {
             $event = $job->isImport() ? AuditEvent::IMPORT_COMPLETED : AuditEvent::EXPORT_COMPLETED;
@@ -202,19 +319,27 @@ class DataProcessingJobService
     /**
      * Mark a job as failed and record the error.
      */
-    public function markFailed(DataProcessingJob $job, string $errorMessage): DataProcessingJob
+    public function markFailed(DataProcessingJob $job, string $errorMessage, ?PipelineFailureReason $reason = null): DataProcessingJob
     {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::FAILED,
             'stage' => null,
             'error_message' => $errorMessage,
+            'failure_reason' => ($reason ?? $this->failures->fromMessage($errorMessage))->value,
             'errors' => [[
                 'row' => 0,
                 'type' => 'error',
                 'message' => $errorMessage,
             ]],
             'completed_at' => now(),
+            'last_heartbeat_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->failed($job, $errorMessage);
+        }
 
         if (! $job->isReport()) {
             $event = $job->isImport() ? AuditEvent::IMPORT_FAILED : AuditEvent::EXPORT_FAILED;
@@ -239,11 +364,19 @@ class DataProcessingJobService
      */
     public function markCancelled(DataProcessingJob $job): DataProcessingJob
     {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::CANCELLED,
             'stage' => null,
+            'failure_reason' => PipelineFailureReason::CANCELLED->value,
             'completed_at' => now(),
+            'last_heartbeat_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->cancelled($job);
+        }
 
         $this->audit->record(
             AuditEvent::PROCESSING_CANCELLED,
@@ -305,10 +438,15 @@ class DataProcessingJobService
             'error_count' => null,
             'errors' => null,
             'error_message' => null,
+            'failure_reason' => null,
             'started_at' => null,
+            'last_heartbeat_at' => null,
+            'next_retry_at' => null,
             'completed_at' => null,
             'cancel_requested_at' => null,
         ]);
+
+        $this->pipeline->retryScheduled($job);
 
         DataProcessingJobDispatcher::dispatch($job);
 
@@ -394,6 +532,14 @@ class DataProcessingJobService
     public function activeCountFor(?int $userId, bool $viewAll): int
     {
         return $this->repository->activeCount($viewAll ? null : $userId);
+    }
+
+    /**
+     * A derived revision the frontend uses to skip work when nothing changed.
+     */
+    public function pipelineRevisionFor(?int $userId, bool $viewAll): string
+    {
+        return $this->repository->pipelineRevision($viewAll ? null : $userId);
     }
 
     /**

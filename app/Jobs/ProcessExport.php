@@ -10,6 +10,7 @@ use App\Models\DataProcessingJob;
 use App\Models\User;
 use App\Registry\QueueRegistry;
 use App\Services\DataProcessingJob\DataProcessingJobService;
+use App\Services\Pipeline\PipelineEventRecorder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\FailOnTimeout;
@@ -52,20 +53,21 @@ class ProcessExport implements ShouldQueue
      * Execute the job. Model events fired during the run are attributed to
      * the job owner, since a queue has no authenticated user.
      */
-    public function handle(DataProcessingJobService $service, ?CauserResolver $causerResolver = null): void
+    public function handle(DataProcessingJobService $service, ?PipelineEventRecorder $recorder = null, ?CauserResolver $causerResolver = null): void
     {
+        $recorder ??= app(PipelineEventRecorder::class);
         $causerResolver ??= app(CauserResolver::class);
 
         $owner = $this->dataProcessingJob->user_id !== null
             ? User::find($this->dataProcessingJob->user_id)
             : null;
 
-        $causerResolver->withCauser($owner, function () use ($service): void {
-            $this->process($service);
+        $causerResolver->withCauser($owner, function () use ($service, $recorder): void {
+            $this->process($service, $recorder);
         });
     }
 
-    private function process(DataProcessingJobService $service): void
+    private function process(DataProcessingJobService $service, PipelineEventRecorder $recorder): void
     {
         $job = $this->dataProcessingJob;
 
@@ -82,8 +84,15 @@ class ProcessExport implements ShouldQueue
             throw new RuntimeException('The export job is missing an entity type.');
         }
 
+        $prepareStart = microtime(true);
+
+        $recorder->stageStarted($job, 'prepare');
+        $service->touchHeartbeat($job);
+
         $exporter = $entity->makeExporter($job->filters ?? []);
         $total = $exporter->total();
+
+        $recorder->stageCompleted($job, 'prepare', (int) round((microtime(true) - $prepareStart) * 1000));
 
         $service->markProcessing($job, totalItems: $total, stage: $exporter->stage());
 
@@ -93,7 +102,14 @@ class ProcessExport implements ShouldQueue
         $filePath = "{$basePath}/{$fileName}";
         $fileDisk = (string) config('exports.disk', 'local');
 
+        $generateStart = microtime(true);
+
+        $recorder->stageStarted($job, 'generate');
+        $service->touchHeartbeat($job);
+
         Excel::store($exporter, $filePath, $fileDisk);
+
+        $recorder->stageCompleted($job, 'generate', (int) round((microtime(true) - $generateStart) * 1000));
 
         $size = Storage::disk($fileDisk)->exists($filePath)
             ? Storage::disk($fileDisk)->size($filePath)

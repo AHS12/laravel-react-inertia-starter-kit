@@ -4,12 +4,15 @@ import { useState } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
+import { ActiveRuns } from '@/components/data-processing/active-runs';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
 import { JobDetailSheet } from '@/components/data-processing/job-detail-sheet';
 import { JobFilters } from '@/components/data-processing/job-filters';
 import { JobList } from '@/components/data-processing/job-list';
 import { JobStatCards } from '@/components/data-processing/job-stat-cards';
+import { InlineAlert } from '@/components/feedback/inline-alert';
+import { ListSkeleton } from '@/components/feedback/skeleton-list';
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/use-can';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
@@ -31,6 +34,7 @@ type Props = {
     jobs: Paginated<DataProcessingJob>;
     stats: JobStats;
     activeJobs: number;
+    activeRuns: DataProcessingJob[];
     filters: JobFiltersType;
     options: JobOptions;
 };
@@ -39,6 +43,7 @@ export default function DataProcessingIndex({
     jobs,
     stats,
     activeJobs,
+    activeRuns,
     filters,
     options,
 }: Props) {
@@ -61,7 +66,7 @@ export default function DataProcessingIndex({
             type: type === 'all' ? undefined : type,
             status: status === 'all' ? undefined : status,
         },
-        { only: ['jobs', 'stats', 'activeJobs'] },
+        { only: ['jobs', 'stats', 'activeJobs', 'activeRuns'] },
     );
 
     const { live, pause, resume } = useJobPoll(activeJobs > 0);
@@ -119,6 +124,8 @@ export default function DataProcessingIndex({
                     onSelect={selectStatus}
                 />
 
+                <ActiveRuns runs={activeRuns} />
+
                 <JobFilters
                     search={search}
                     onSearchChange={(value) => {
@@ -145,12 +152,19 @@ export default function DataProcessingIndex({
                 />
 
                 {!live && activeJobs > 0 && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-                        <span>{t('Live updates are paused.')}</span>
-                        <Button variant="ghost" size="sm" onClick={resume}>
-                            {t('Resume')}
-                        </Button>
-                    </div>
+                    <InlineAlert
+                        tone="info"
+                        title={t('Live updates are paused.')}
+                        action={
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={resume}
+                            >
+                                {t('Resume')}
+                            </Button>
+                        }
+                    />
                 )}
 
                 <div
@@ -158,7 +172,9 @@ export default function DataProcessingIndex({
                     aria-live="polite"
                     aria-busy={activeJobs > 0}
                 >
-                    {jobs.data.length > 0 ? (
+                    {activeJobs > 0 && jobs.data.length === 0 ? (
+                        <ListSkeleton rows={3} />
+                    ) : jobs.data.length > 0 ? (
                         <>
                             <JobList jobs={jobs.data} onOpen={openJob} />
                             <DataTablePagination

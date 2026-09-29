@@ -8,6 +8,8 @@
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
+        "test": "vp test",
+        "test:watch": "vp test --watch",
         "types:check": "tsc --noEmit"
     },
     "dependencies": {
@@ -38,12 +40,15 @@
         "@vitejs/plugin-react": "^6.1.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
         "concurrently": "^10.0.3",
         "input-otp": "^1.4.2",
         "laravel-vite-plugin": "^3.0.0",
         "lucide-react": "^0.475.0",
         "react": "^19.2.0",
+        "react-day-picker": "^9.14.0",
         "react-dom": "^19.2.0",
+        "recharts": "^3.10.1",
         "sonner": "^2.0.0",
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
@@ -55,8 +60,11 @@
     "devDependencies": {
         "@laravel/vite-plugin-wayfinder": "^0.1.3",
         "@rolldown/plugin-babel": "^0.2.3",
+        "@testing-library/jest-dom": "^7.0.1",
+        "@testing-library/react": "^16.3.3",
         "@types/node": "^22.13.5",
         "babel-plugin-react-compiler": "^1.0.0",
+        "jsdom": "^29.1.1",
         "vite-plus": "0.3.0"
     },
     "optionalDependencies": {
