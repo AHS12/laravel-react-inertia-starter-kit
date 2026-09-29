@@ -97,6 +97,8 @@ Full guides live in [`docs/`](docs/README.md):
 | [Testing](docs/testing.md)                        | Pest, the quality gate, git hooks        |
 | [Translations](docs/translations.md)              | The 5-locale i18n layer                  |
 | [Troubleshooting](docs/troubleshooting.md)        | Common problems and fixes                |
+| [UI conventions](docs/ui-conventions.md) | Motion, feedback, charts and accessibility conventions |
+| [Accessibility](docs/accessibility.md) | Keyboard/focus/contrast audit and high-contrast tokens |
 
 ## Contributing
 

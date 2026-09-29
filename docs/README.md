@@ -15,6 +15,8 @@ a production-ready Laravel + Inertia/React starter kit.
 | [Testing](testing.md)                         | Pest setup, the quality gate, git hooks                           |
 | [Translations](translations.md)               | The 5-locale i18n layer and how to add strings                    |
 | [Troubleshooting](troubleshooting.md)         | Common problems and fixes                                         |
+| [UI conventions](ui-conventions.md)           | Motion, feedback, charts and accessibility conventions |
+| [Accessibility](accessibility.md)             | Keyboard/focus/contrast audit and high-contrast tokens |
 
 ## In the application
 
